@@ -74,7 +74,16 @@ Mandatory. Renders a video as a textured plane at z: 1 with padding/rounding sup
 
 ## Context — State / Actions / Meta
 
-Follows Vercel composition pattern: three-part interface.
+Follows Vercel composition pattern: three-part interface. Split into **public** (consumer-facing) and **internal** (child component plumbing).
+
+### Public Context — `PlayerContextValue`
+
+```ts
+interface PlayerContextValue {
+  state: PlayerState
+  meta: PlayerMeta
+}
+```
 
 ### PlayerState
 
@@ -85,19 +94,7 @@ interface PlayerState {
 }
 ```
 
-Canvas-level only. Playback state lives on the PlaybackSource (see below).
-
-### PlayerActions
-
-```ts
-interface PlayerActions {
-  registerMesh: (id: string, mesh: THREE.Mesh, zIndex: number) => void
-  unregisterMesh: (id: string) => void
-  registerPlayback: (playback: PlaybackSource) => void
-  unregisterPlayback: () => void
-  reportError: (error: Error) => void
-}
-```
+Canvas-level only. Playback state lives on PlaybackSource (accessed via `usePlayback()` hook). Appearance state lives on VideoAppearanceStore (accessed via `useAppearance()` hook).
 
 ### PlayerMeta
 
@@ -108,6 +105,27 @@ interface PlayerMeta {
   sceneRef: React.RefObject<THREE.Scene>
 }
 ```
+
+### Internal Context — `PlayerInternalContextValue`
+
+Not exported. Used only by child components (`Background`, `Video`) to register into the scene.
+
+```ts
+interface PlayerInternalContextValue {
+  registerMesh: (id: string, mesh: THREE.Mesh, zIndex: number) => void
+  unregisterMesh: (id: string) => void
+  registerPlayback: (playback: PlaybackSource) => void
+  unregisterPlayback: () => void
+  registerAppearance: (store: VideoAppearanceStore) => void
+  unregisterAppearance: () => void
+  reportError: (error: Error) => void
+  clearError: () => void
+}
+```
+
+### Error Recovery
+
+`clearError()` resets `state.error` to `null`. It is internal — consumers cannot call it directly. Error recovery happens by changing the `videoSrc` / `backgroundSrc` prop, which triggers the child to remount and internally calls `clearError()` before retrying.
 
 ---
 
@@ -120,19 +138,24 @@ interface PlaybackSource {
   play: () => void
   pause: () => void
   seek: (time: number) => void
+  setVolume: (value: number) => void
+  setMuted: (muted: boolean) => void
   getState: () => PlaybackState
   subscribe: (listener: () => void) => () => void
-  element: HTMLVideoElement
 }
 
 interface PlaybackState {
   isPlaying: boolean
   currentTime: number
   duration: number
+  volume: number
+  isMuted: boolean
   isBuffering: boolean
   isEnded: boolean
 }
 ```
+
+Note: the raw `HTMLVideoElement` is not exposed on `PlaybackSource`. This prevents state desync from direct element manipulation. All video interaction goes through `PlaybackSource` methods.
 
 ### Why subscribe pattern?
 
@@ -143,18 +166,33 @@ interface PlaybackState {
 - Only components that read specific playback fields re-render
 - Three.js render loop reads `getState()` directly — zero React involvement
 
+### Consumer access — `usePlayback()` hook
+
+`usePlayback()` internally calls `useSyncExternalStore(source.subscribe, source.getState)` and merges the result with the action methods. It returns a flattened object:
+
+```ts
+type UsePlaybackReturn = PlaybackState & {
+  play: () => void
+  pause: () => void
+  seek: (time: number) => void
+  setVolume: (value: number) => void
+  setMuted: (muted: boolean) => void
+}
+```
+
+Consumers get both state and actions on one object. There is no playback accessor on the public context.
+
 ### Consumer example
 
 ```tsx
 function CustomControls() {
-  const { actions } = use(PlayerContext)
-  const playback = usePlayback() // hook using useSyncExternalStore
+  const playback = usePlayback() // flattened PlaybackState + actions
 
   return (
     <div>
       <button
         aria-label={playback.isPlaying ? 'Pause video' : 'Play video'}
-        onClick={() => playback.isPlaying ? actions.playback.pause() : actions.playback.play()}
+        onClick={() => playback.isPlaying ? playback.pause() : playback.play()}
       >
         {playback.isPlaying ? 'Pause' : 'Play'}
       </button>
@@ -163,7 +201,7 @@ function CustomControls() {
         aria-label="Seek video timeline"
         value={playback.currentTime}
         max={playback.duration}
-        onChange={(e) => actions.playback.seek(Number(e.target.value))}
+        onChange={(e) => playback.seek(Number(e.target.value))}
       />
     </div>
   )
@@ -174,11 +212,11 @@ function CustomControls() {
 
 ## Padding & Rounding — Controlled / Uncontrolled
 
-Padding and rounding are properties of the Video layer. They affect the video mesh size and shader.
+Padding and rounding visually affect the Video mesh (plane size and shader radius) but are managed at the Canvas/context level so external consumer controls can read and write them.
 
-### On Canvas context (not Video props)
+### VideoAppearanceStore
 
-Since consumers need to read/write these values from external controls, they live on a separate context-level store — same subscribe pattern as playback:
+Canvas creates this store internally and registers it into an `AppearanceContext` (separate from `PlayerContext`). Consumers access it via the `useAppearance()` hook — same subscribe/external-store pattern as playback.
 
 ```ts
 interface VideoAppearance {
@@ -186,11 +224,37 @@ interface VideoAppearance {
   rounding: number  // 0–100
 }
 
-interface VideoAppearanceActions {
+interface VideoAppearanceStore {
   setPadding: (value: number) => void
   setRounding: (value: number) => void
   getAppearance: () => VideoAppearance
   subscribe: (listener: () => void) => () => void
+}
+```
+
+`useAppearance()` returns a flattened merge of state + actions, same pattern as `usePlayback()`:
+
+```ts
+type UseAppearanceReturn = VideoAppearance & {
+  setPadding: (value: number) => void
+  setRounding: (value: number) => void
+}
+```
+
+```tsx
+function AppearanceControls() {
+  const appearance = useAppearance() // flattened VideoAppearance + actions
+
+  return (
+    <input
+      type="range"
+      aria-label="Video padding"
+      value={appearance.padding}
+      min={0}
+      max={100}
+      onChange={(e) => appearance.setPadding(Number(e.target.value))}
+    />
+  )
 }
 ```
 
@@ -307,9 +371,16 @@ requestAnimationFrame:
   2. renderer.render(scene, camera)
 
 Optimization:
-  - When video paused AND no interaction → stop loop
-  - Resume on: play, padding change, rounding change, resize
+  - When video paused AND no pending appearance/resize changes → stop loop
+  - Resume on: play, padding change, rounding change, resize, error state change
+  - "No pending changes" means: no appearance store update within the last frame
 ```
+
+### WebGL Context Loss
+
+Handle `webglcontextlost` / `webglcontextrestored` events on the canvas:
+- On `contextlost`: fire `reportError`, pause render loop
+- On `contextrestored`: recreate renderer, re-register all meshes, resume render loop
 
 ### Responsive Sizing
 
@@ -353,9 +424,11 @@ Hidden live region alongside canvas provides parallel accessible description.
       {/* "Playing", "Paused at 1:23", "Buffering", "Error: ..." */}
     </div>
   </div>
-  {children}
+  {children}  {/* consumer controls rendered here — siblings to canvas, inside the group */}
 </div>
 ```
+
+Consumer controls (play/pause buttons, sliders, etc.) are rendered as `{children}` inside the `role="group"` wrapper. This means they are DOM siblings of the canvas and part of the accessible group. This is the intended consumer pattern — controls live inside `Player.Canvas`.
 
 ### Guarantees
 
@@ -378,16 +451,19 @@ Component exposes accessible state. Consumer builds accessible controls using co
 
 ```
 src/components/player/
-├── canvas.tsx              # Player.Canvas
-├── canvas-background.tsx   # Player.Canvas.Background
-├── canvas-video.tsx        # Player.Canvas.Video
-├── context.ts              # PlayerContext (state/actions/meta)
-├── use-playback.ts         # usePlayback hook (useSyncExternalStore)
-├── use-appearance.ts       # useAppearance hook (padding/rounding)
+├── canvas.tsx              # Player.Canvas — scene host, renderer, camera, render loop
+├── canvas-background.tsx   # Player.Canvas.Background — background image layer
+├── canvas-video.tsx        # Player.Canvas.Video — video layer
+├── playback-source.ts      # PlaybackSource class — external store wrapping <video>
+├── appearance-store.ts     # VideoAppearanceStore — external store for padding/rounding
+├── context.ts              # PlayerContext (public) + PlayerInternalContext (private)
+├── use-playback.ts         # usePlayback hook (useSyncExternalStore over PlaybackSource)
+├── use-appearance.ts       # useAppearance hook (useSyncExternalStore over AppearanceStore)
 ├── types.ts                # All TypeScript interfaces
 ├── shaders/
-│   └── rounded-video.glsl  # Rounded rect fragment shader
-└── index.ts                # Public API: Player compound component
+│   ├── rounded-video.vert  # Passthrough vertex shader
+│   └── rounded-video.frag  # Rounded rect SDF fragment shader
+└── index.ts                # Public API: Player compound component + hooks + types
 ```
 
 ## Public Exports
@@ -395,21 +471,23 @@ src/components/player/
 ```ts
 // index.ts
 export { Player }           // Compound component
-export { usePlayback }      // Subscribe to playback state
-export { useAppearance }    // Subscribe to padding/rounding state
-export { PlayerContext }     // Raw context (escape hatch)
+export { usePlayback }      // Subscribe to playback state + actions
+export { useAppearance }    // Subscribe to appearance state + actions
+export { PlayerContext }     // Raw public context (escape hatch)
 
 // Types
 export type {
+  PlayerContextValue,
   PlayerState,
-  PlayerActions,
   PlayerMeta,
   PlaybackSource,
   PlaybackState,
   VideoAppearance,
-  VideoAppearanceActions,
+  VideoAppearanceStore,
 }
 ```
+
+`PlayerInternalContextValue` is NOT exported — it is implementation detail for child components only.
 
 ---
 
@@ -437,4 +515,4 @@ Server receives export request (videoSrc, backgroundSrc, padding, rounding, skip
 
 ### Client-side fallback
 
-WebCodecs API (`VideoEncoder` + `VideoFrame` from canvas) with `mp4-muxer` for container. Falls back to FFmpeg.wasm (~25MB) if WebCodecs unavailable. For offline/self-hosted scenarios only.
+WebCodecs API + `mp4-muxer` or FFmpeg.wasm. For offline/self-hosted scenarios only. Defer detailed architecture to a separate spec when export is in scope.
