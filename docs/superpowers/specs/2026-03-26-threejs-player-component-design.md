@@ -22,7 +22,7 @@ Only the Three.js player component (right panel from arch.md). Does not include 
 
 ## Component API
 
-### Usage
+### Usage — Minimal (uncontrolled)
 
 ```tsx
 import { Player } from '@/components/player'
@@ -36,17 +36,110 @@ import { Player } from '@/components/player'
 </Player.Canvas>
 ```
 
+### Usage — Fully controlled
+
+```tsx
+<Player.Canvas
+  aria-label="Product demo video player"
+
+  // Controlled playback
+  playing={isPlaying}
+  currentTime={seekPosition}
+  volume={volume}
+  muted={isMuted}
+  playbackRate={speed}
+
+  // Controlled appearance
+  padding={padding}
+  rounding={rounding}
+
+  // Event callbacks
+  onPlay={() => setIsPlaying(true)}
+  onPause={() => setIsPlaying(false)}
+  onEnded={() => goToNextVideo()}
+  onTimeUpdate={(time) => setSeekPosition(time)}
+  onDurationChange={(duration) => setTotalDuration(duration)}
+  onSeeking={() => setIsSeeking(true)}
+  onSeeked={() => setIsSeeking(false)}
+  onReady={() => setLoaded(true)}
+  onBuffering={() => setBuffering(true)}
+  onVolumeChange={(vol, mute) => { setVolume(vol); setIsMuted(mute) }}
+  onPaddingChange={(val) => setPadding(val)}
+  onRoundingChange={(val) => setRounding(val)}
+  onError={(error) => console.error(error)}
+>
+  <Player.Canvas.Background backgroundSrc="/bg.jpg" />
+  <Player.Canvas.Video videoSrc="/demo.mp4" />
+</Player.Canvas>
+```
+
+### Usage — Hybrid (partial control)
+
+```tsx
+// Control volume externally, let playback be internal, react to events
+<Player.Canvas
+  aria-label="Player"
+  volume={volume}
+  muted={isMuted}
+  onEnded={() => goToNextVideo()}
+  onTimeUpdate={(time) => syncTranscript(time)}
+>
+  <Player.Canvas.Background backgroundSrc="/bg.jpg" />
+  <Player.Canvas.Video videoSrc="/demo.mp4" />
+</Player.Canvas>
+```
+
 ### `Player.Canvas`
 
 The scene host. Creates Three.js renderer, scene, camera, render loop. Validates children. Provides context.
 
+**Core props:**
+
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `onError` | `(error: Error) => void` | No | Callback when any child reports an error |
 | `aria-label` | `string` | Yes | Accessible label for the player group |
 | `children` | `ReactNode` | Yes | Canvas layer children |
 | `className` | `string` | No | CSS class for the wrapper div |
 | `style` | `React.CSSProperties` | No | Inline styles for the wrapper div |
+
+**Controlled playback props** (all optional — uncontrolled by default):
+
+| Prop | Type | Description |
+|---|---|---|
+| `playing` | `boolean` | Drive play/pause externally |
+| `currentTime` | `number` | Drive seek position externally |
+| `volume` | `number` | Drive volume (0–1) externally |
+| `muted` | `boolean` | Drive mute state externally |
+| `playbackRate` | `number` | Drive playback speed externally |
+
+**Controlled appearance props** (all optional — uncontrolled by default):
+
+| Prop | Type | Description |
+|---|---|---|
+| `padding` | `number` | Controlled padding (0–100) |
+| `rounding` | `number` | Controlled rounding (0–100) |
+| `defaultPadding` | `number` | Initial padding for uncontrolled mode |
+| `defaultRounding` | `number` | Initial rounding for uncontrolled mode |
+
+**Event callbacks** (all optional):
+
+| Prop | Type | Description |
+|---|---|---|
+| `onPlay` | `() => void` | Fired when video starts playing |
+| `onPause` | `() => void` | Fired when video pauses |
+| `onEnded` | `() => void` | Fired when video reaches end |
+| `onTimeUpdate` | `(time: number) => void` | Fired on currentTime change (~4/sec) |
+| `onDurationChange` | `(duration: number) => void` | Fired when duration becomes known |
+| `onSeeking` | `() => void` | Fired when seek begins |
+| `onSeeked` | `() => void` | Fired when seek completes |
+| `onReady` | `() => void` | Fired when video is ready to play |
+| `onBuffering` | `() => void` | Fired when video is buffering |
+| `onVolumeChange` | `(volume: number, muted: boolean) => void` | Fired on volume/mute change |
+| `onPaddingChange` | `(value: number) => void` | Fired when padding changes |
+| `onRoundingChange` | `(value: number) => void` | Fired when rounding changes |
+| `onError` | `(error: Error) => void` | Fired on any error |
+
+**Control modes:** Each controllable value (`playing`, `currentTime`, `volume`, `muted`, `playbackRate`, `padding`, `rounding`) works independently. Pass the prop = controlled. Omit it = uncontrolled. Mix and match freely. Event callbacks fire in both modes.
 
 ### `Player.Canvas.Background`
 
@@ -135,6 +228,16 @@ interface PlayerInternalContextValue {
 
 Video registers a `PlaybackSource` into context. Consumers subscribe to it for playback state.
 
+### How controlled props flow
+
+Canvas receives controlled props (`playing`, `currentTime`, `volume`, `muted`, `playbackRate`) and passes them to `PlaybackSource` via the internal context. `PlaybackSource` reconciles controlled vs uncontrolled values:
+
+- **Controlled value present:** `PlaybackSource` drives the `<video>` element to match the prop. Consumer owns the value, `PlaybackSource` is a passthrough.
+- **Controlled value absent:** `PlaybackSource` reads from the `<video>` element naturally. Internal state.
+- **Event callbacks:** Always fire regardless of control mode. Canvas listens to `PlaybackSource.subscribe()` and forwards state changes to the corresponding `onPlay`, `onPause`, `onTimeUpdate`, etc. callbacks.
+
+Same pattern for appearance: Canvas passes controlled `padding`/`rounding` to `VideoAppearanceStore`, which reconciles.
+
 ```ts
 interface PlaybackSource {
   play: () => void
@@ -142,6 +245,7 @@ interface PlaybackSource {
   seek: (time: number) => void
   setVolume: (value: number) => void
   setMuted: (muted: boolean) => void
+  setPlaybackRate: (rate: number) => void
   getState: () => PlaybackState
   subscribe: (listener: () => void) => () => void
 }
@@ -152,7 +256,9 @@ interface PlaybackState {
   duration: number
   volume: number
   isMuted: boolean
+  playbackRate: number
   isBuffering: boolean
+  isSeeking: boolean
   isEnded: boolean
 }
 ```
@@ -179,6 +285,7 @@ type UsePlaybackReturn = PlaybackState & {
   seek: (time: number) => void
   setVolume: (value: number) => void
   setMuted: (muted: boolean) => void
+  setPlaybackRate: (rate: number) => void
 }
 ```
 
@@ -260,36 +367,7 @@ function AppearanceControls() {
 }
 ```
 
-Controlled/uncontrolled via Canvas props:
-
-```tsx
-// Uncontrolled (internal state, defaults)
-<Player.Canvas onError={fn} aria-label="Player">
-  ...
-</Player.Canvas>
-
-// Controlled
-<Player.Canvas
-  onError={fn}
-  aria-label="Player"
-  padding={padding}
-  rounding={rounding}
-  onPaddingChange={setPadding}
-  onRoundingChange={setRounding}
->
-  ...
-</Player.Canvas>
-
-// Uncontrolled with initial values
-<Player.Canvas
-  onError={fn}
-  aria-label="Player"
-  defaultPadding={20}
-  defaultRounding={12}
->
-  ...
-</Player.Canvas>
-```
+Controlled/uncontrolled via Canvas props — see `padding`, `rounding`, `defaultPadding`, `defaultRounding`, `onPaddingChange`, `onRoundingChange` in the Canvas props table above. Same per-prop control mode as playback props.
 
 ---
 
