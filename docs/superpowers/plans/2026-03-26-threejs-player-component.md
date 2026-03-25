@@ -6,7 +6,7 @@
 
 **Architecture:** Compound component (`Player.Canvas` > `Player.Canvas.Background` + `Player.Canvas.Video`) where Canvas is a dumb scene host, children register their own meshes via internal context, and consumers build UI with exposed hooks (`usePlayback`, `useAppearance`). External stores with `useSyncExternalStore` avoid unnecessary re-renders.
 
-**Tech Stack:** Next.js 16, React 19, TypeScript (strict), Three.js (raw), Vitest + Storybook 10 for testing, no CSS dependencies.
+**Tech Stack:** Next.js 16, React 19, TypeScript (strict), Three.js (raw), Zod (runtime validation + type derivation), es-toolkit (utilities: clamp, debounce, noop, etc.), Vitest + Storybook 10 for testing, no CSS dependencies.
 
 **Spec:** `docs/superpowers/specs/2026-03-26-threejs-player-component-design.md`
 
@@ -21,6 +21,9 @@
 - Next.js 16 — check `node_modules/next/dist/docs/` if unsure about APIs
 - Use `yarn` for all commands (not `npx`) — the project uses yarn as its package manager
 - React Compiler handles memoization — do NOT use `useCallback`, `useMemo`, or `memo` manually
+- Use Zod for all runtime validation — define schemas, derive types with `z.infer<typeof Schema>`
+- Use es-toolkit for utilities — `clamp` from `es-toolkit/math`, `debounce` from `es-toolkit/function`, `noop` from `es-toolkit/function`, etc. Do NOT write custom utility functions when es-toolkit provides them
+- es-toolkit docs: https://es-toolkit.dev/llms-full.txt
 
 ---
 
@@ -59,19 +62,19 @@ src/components/player/__stories__/
 **Files:**
 - Modify: `package.json`
 
-- [ ] **Step 1: Install three.js and its types**
+- [ ] **Step 1: Install three.js, zod, and es-toolkit**
 
 ```bash
-yarn add three && yarn add -D @types/three
+yarn add three zod es-toolkit && yarn add -D @types/three
 ```
 
 - [ ] **Step 2: Verify installation**
 
 ```bash
-node -e "require('three'); console.log('three.js OK')"
+node -e "require('three'); require('zod'); require('es-toolkit'); console.log('All deps OK')"
 ```
 
-Expected: `three.js OK`
+Expected: `All deps OK`
 
 - [ ] **Step 3: Add unit test project to vitest config**
 
@@ -110,17 +113,67 @@ git commit -m "chore: install three.js and configure unit test project"
 - [ ] **Step 1: Create the types file**
 
 ```ts
+import { z } from 'zod'
 import type { RefObject } from 'react'
 import type { WebGLRenderer, Scene, Mesh } from 'three'
 
-// --- Player State (canvas-level) ---
+// --- Zod Schemas (single source of truth for runtime validation + types) ---
+
+export const PlaybackStateSchema = z.object({
+  isPlaying: z.boolean(),
+  currentTime: z.number().nonnegative(),
+  duration: z.number().nonnegative(),
+  volume: z.number().min(0).max(1),
+  isMuted: z.boolean(),
+  playbackRate: z.number().positive(),
+  isBuffering: z.boolean(),
+  isSeeking: z.boolean(),
+  isEnded: z.boolean(),
+})
+
+export const VideoAppearanceSchema = z.object({
+  padding: z.number().min(0).max(100),
+  rounding: z.number().min(0).max(100),
+})
+
+export const ControlledPlaybackPropsSchema = z.object({
+  playing: z.boolean().optional(),
+  currentTime: z.number().nonnegative().optional(),
+  volume: z.number().min(0).max(1).optional(),
+  muted: z.boolean().optional(),
+  playbackRate: z.number().positive().optional(),
+})
+
+export const ControlledAppearancePropsSchema = z.object({
+  padding: z.number().min(0).max(100).optional(),
+  rounding: z.number().min(0).max(100).optional(),
+})
+
+export const CanvasBackgroundPropsSchema = z.object({
+  backgroundSrc: z.string().min(1),
+  'aria-label': z.string().optional(),
+})
+
+export const CanvasVideoPropsSchema = z.object({
+  videoSrc: z.string().min(1),
+  'aria-label': z.string().optional(),
+})
+
+// --- Derived Types (from Zod schemas) ---
+
+export type PlaybackState = z.infer<typeof PlaybackStateSchema>
+export type VideoAppearance = z.infer<typeof VideoAppearanceSchema>
+export type ControlledPlaybackProps = z.infer<typeof ControlledPlaybackPropsSchema>
+export type ControlledAppearanceProps = z.infer<typeof ControlledAppearancePropsSchema>
+export type CanvasBackgroundProps = z.infer<typeof CanvasBackgroundPropsSchema>
+export type CanvasVideoProps = z.infer<typeof CanvasVideoPropsSchema>
+
+// --- Non-schema types (contain refs/functions — can't be Zod schemas) ---
 
 export interface PlayerState {
   isReady: boolean
   error: Error | null
 }
-
-// --- Player Meta ---
 
 export interface PlayerMeta {
   canvasRef: RefObject<HTMLCanvasElement | null>
@@ -128,14 +181,10 @@ export interface PlayerMeta {
   sceneRef: RefObject<Scene | null>
 }
 
-// --- Public Context ---
-
 export interface PlayerContextValue {
   state: PlayerState
   meta: PlayerMeta
 }
-
-// --- Internal Context (not exported from index.ts) ---
 
 export interface PlayerInternalContextValue {
   registerMesh: (id: string, mesh: Mesh, zIndex: number) => void
@@ -146,20 +195,6 @@ export interface PlayerInternalContextValue {
   unregisterAppearance: () => void
   reportError: (error: Error) => void
   clearError: () => void
-}
-
-// --- Playback ---
-
-export interface PlaybackState {
-  isPlaying: boolean
-  currentTime: number
-  duration: number
-  volume: number
-  isMuted: boolean
-  playbackRate: number
-  isBuffering: boolean
-  isSeeking: boolean
-  isEnded: boolean
 }
 
 export interface PlaybackSource {
@@ -175,14 +210,6 @@ export interface PlaybackSource {
   destroy: () => void
 }
 
-export interface ControlledPlaybackProps {
-  playing?: boolean
-  currentTime?: number
-  volume?: number
-  muted?: boolean
-  playbackRate?: number
-}
-
 export type UsePlaybackReturn = PlaybackState & {
   play: () => void
   pause: () => void
@@ -190,13 +217,6 @@ export type UsePlaybackReturn = PlaybackState & {
   setVolume: (value: number) => void
   setMuted: (muted: boolean) => void
   setPlaybackRate: (rate: number) => void
-}
-
-// --- Appearance ---
-
-export interface VideoAppearance {
-  padding: number
-  rounding: number
 }
 
 export interface VideoAppearanceStore {
@@ -207,17 +227,10 @@ export interface VideoAppearanceStore {
   syncControlled: (props: ControlledAppearanceProps) => void
 }
 
-export interface ControlledAppearanceProps {
-  padding?: number
-  rounding?: number
-}
-
 export type UseAppearanceReturn = VideoAppearance & {
   setPadding: (value: number) => void
   setRounding: (value: number) => void
 }
-
-// --- Canvas Props ---
 
 export interface PlayerCanvasProps {
   'aria-label': string
@@ -252,18 +265,6 @@ export interface PlayerCanvasProps {
   onPaddingChange?: (value: number) => void
   onRoundingChange?: (value: number) => void
   onError?: (error: Error) => void
-}
-
-// --- Child Props ---
-
-export interface CanvasBackgroundProps {
-  backgroundSrc: string
-  'aria-label'?: string
-}
-
-export interface CanvasVideoProps {
-  videoSrc: string
-  'aria-label'?: string
 }
 ```
 
@@ -501,6 +502,7 @@ Expected: FAIL — `createPlaybackSource` does not exist.
 Create `src/components/player/playback-source.ts`:
 
 ```ts
+import { clamp } from 'es-toolkit/math'
 import type { PlaybackSource, PlaybackState, ControlledPlaybackProps } from './types'
 
 const VIDEO_EVENTS = [
@@ -567,7 +569,7 @@ export function createPlaybackSource(video: HTMLVideoElement): PlaybackSource {
   }
 
   function setVolume(value: number) {
-    video.volume = Math.max(0, Math.min(1, value))
+    video.volume = clamp(value, 0, 1)
   }
 
   function setMuted(muted: boolean) {
@@ -587,7 +589,7 @@ export function createPlaybackSource(video: HTMLVideoElement): PlaybackSource {
       video.currentTime = props.currentTime
     }
     if (props.volume !== undefined) {
-      video.volume = Math.max(0, Math.min(1, props.volume))
+      video.volume = clamp(props.volume, 0, 1)
     }
     if (props.muted !== undefined) {
       video.muted = props.muted
@@ -731,11 +733,8 @@ Expected: FAIL — `createAppearanceStore` does not exist.
 Create `src/components/player/appearance-store.ts`:
 
 ```ts
+import { clamp } from 'es-toolkit/math'
 import type { VideoAppearance, VideoAppearanceStore, ControlledAppearanceProps } from './types'
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value))
-}
 
 export function createAppearanceStore(initial: {
   defaultPadding?: number
