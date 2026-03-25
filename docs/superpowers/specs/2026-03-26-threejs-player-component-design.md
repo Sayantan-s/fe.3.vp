@@ -16,7 +16,7 @@ Only the Three.js player component (right panel from arch.md). Does not include 
 - React 19 (use `use()` not `useContext()`, ref as regular prop)
 - React Compiler enabled (no manual memoization needed)
 - Three.js (raw, no R3F)
-- CSS Modules (project convention, though this component is headless — minimal CSS for sr-only)
+- Zero styling opinion — no CSS Modules, no stylesheets, no CSS-in-JS dependency. Compatible with Tailwind, styled-components, CSS Modules, or plain CSS classes. All DOM elements accept `className` and `style` props. sr-only styles are inline (functional, not aesthetic).
 
 ---
 
@@ -45,6 +45,8 @@ The scene host. Creates Three.js renderer, scene, camera, render loop. Validates
 | `onError` | `(error: Error) => void` | No | Callback when any child reports an error |
 | `aria-label` | `string` | Yes | Accessible label for the player group |
 | `children` | `ReactNode` | Yes | Canvas layer children |
+| `className` | `string` | No | CSS class for the wrapper div |
+| `style` | `React.CSSProperties` | No | Inline styles for the wrapper div |
 
 ### `Player.Canvas.Background`
 
@@ -415,9 +417,9 @@ Hidden live region alongside canvas provides parallel accessible description.
 ### DOM Structure
 
 ```tsx
-<div role="group" aria-label={ariaLabel}>
+<div role="group" aria-label={ariaLabel} className={className} style={style}>
   <canvas aria-hidden="true" />
-  <div class="sr-only">
+  <div style={srOnlyStyles}>  {/* inline — no stylesheet dependency */}
     <video aria-label="..." tabIndex={-1} />
     <div role="img" aria-label="..." />  {/* background description */}
     <div role="status" aria-live="polite" aria-atomic="true">
@@ -426,6 +428,22 @@ Hidden live region alongside canvas provides parallel accessible description.
   </div>
   {children}  {/* consumer controls rendered here — siblings to canvas, inside the group */}
 </div>
+```
+
+Where `srOnlyStyles` is a constant:
+
+```ts
+const srOnlyStyles: React.CSSProperties = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  borderWidth: 0,
+}
 ```
 
 Consumer controls (play/pause buttons, sliders, etc.) are rendered as `{children}` inside the `role="group"` wrapper. This means they are DOM siblings of the canvas and part of the accessible group. This is the intended consumer pattern — controls live inside `Player.Canvas`.
