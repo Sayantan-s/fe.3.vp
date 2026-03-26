@@ -93,7 +93,10 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
   // --- Validate children ---
   // Ensure at least one Video child exists
 
-  useEffect(() => {
+  // Validate children once on mount
+  const hasValidatedRef = useRef(false)
+  if (!hasValidatedRef.current) {
+    hasValidatedRef.current = true
     let hasVideo = false
     Children.forEach(children, (child) => {
       if (isValidElement(child) && (child.type as any)?.displayName === 'CanvasVideo') {
@@ -102,67 +105,59 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
     })
     if (!hasVideo) {
       const err = new Error('Player.Canvas requires at least one <Player.Canvas.Video> child')
-      setPlayerState((prev) => ({ ...prev, error: err }))
-      onError?.(err)
-    }
-  }, [children, onError])
-
-  // --- Internal context functions ---
-  // React Compiler handles memoization — no useCallback needed
-
-  function reportError(error: Error) {
-    setPlayerState((prev) => ({ ...prev, error }))
-    onError?.(error)
-    setAnnouncement(`Error: ${error.message}`)
-  }
-
-  function clearError() {
-    setPlayerState((prev) => ({ ...prev, error: null }))
-  }
-
-  function registerMesh(id: string, mesh: Mesh, zIndex: number) {
-    mesh.position.z = zIndex
-    meshesRef.current.set(id, { mesh, zIndex })
-    sceneRef.current?.add(mesh)
-  }
-
-  function unregisterMesh(id: string) {
-    const entry = meshesRef.current.get(id)
-    if (entry) {
-      sceneRef.current?.remove(entry.mesh)
-      meshesRef.current.delete(id)
+      // Defer to avoid setState during render
+      queueMicrotask(() => {
+        setPlayerState((prev) => ({ ...prev, error: err }))
+        onError?.(err)
+      })
     }
   }
 
-  function registerPlayback(source: PlaybackSource) {
-    setPlaybackSource(source)
-    setPlayerState((prev) => ({ ...prev, isReady: true }))
-    onReady?.()
-    setAnnouncement('Video ready')
-  }
+  // --- Internal context (stable ref to avoid infinite re-render loops) ---
+  // Children effects depend on the internal context value. If this object changes
+  // identity every render, child effects cleanup/re-run, which call setState on
+  // Canvas, causing another render → infinite loop. Using a ref-backed object
+  // ensures stable identity while the closures inside always read latest state.
 
-  function unregisterPlayback() {
-    setPlaybackSource(null)
-    setPlayerState((prev) => ({ ...prev, isReady: false }))
-  }
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
+  const onReadyRef = useRef(onReady)
+  onReadyRef.current = onReady
 
-  function registerAppearance(_store: VideoAppearanceStore) {
-    // No-op — appearance store is created by Canvas.
-    // Kept for future extensibility.
-  }
-
-  function unregisterAppearance() {}
-
-  const internalValue: PlayerInternalContextValue = {
-    registerMesh,
-    unregisterMesh,
-    registerPlayback,
-    unregisterPlayback,
-    registerAppearance,
-    unregisterAppearance,
-    reportError,
-    clearError,
-  }
+  const [internalValue] = useState<PlayerInternalContextValue>(() => ({
+    registerMesh(id: string, mesh: Mesh, zIndex: number) {
+      mesh.position.z = zIndex
+      meshesRef.current.set(id, { mesh, zIndex })
+      sceneRef.current?.add(mesh)
+    },
+    unregisterMesh(id: string) {
+      const entry = meshesRef.current.get(id)
+      if (entry) {
+        sceneRef.current?.remove(entry.mesh)
+        meshesRef.current.delete(id)
+      }
+    },
+    registerPlayback(source: PlaybackSource) {
+      setPlaybackSource(source)
+      setPlayerState((prev) => ({ ...prev, isReady: true }))
+      onReadyRef.current?.()
+      setAnnouncement('Video ready')
+    },
+    unregisterPlayback() {
+      setPlaybackSource(null)
+      setPlayerState((prev) => ({ ...prev, isReady: false }))
+    },
+    registerAppearance(_store: VideoAppearanceStore) {},
+    unregisterAppearance() {},
+    reportError(error: Error) {
+      setPlayerState((prev) => ({ ...prev, error }))
+      onErrorRef.current?.(error)
+      setAnnouncement(`Error: ${error.message}`)
+    },
+    clearError() {
+      setPlayerState((prev) => ({ ...prev, error: null }))
+    },
+  }))
 
   // --- Sync controlled playback props ---
 
@@ -355,7 +350,7 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
       e.preventDefault()
       running = false
       cancelAnimationFrame(animFrameRef.current)
-      reportError(new Error('WebGL context lost'))
+      internalValue.reportError(new Error('WebGL context lost'))
     }
 
     function onContextRestored() {
@@ -369,7 +364,7 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
       needsRender = true
       resize()
       animate()
-      clearError()
+      internalValue.clearError()
     }
 
     canvas.addEventListener('webglcontextlost', onContextLost)
