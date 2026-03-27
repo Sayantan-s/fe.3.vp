@@ -17,7 +17,10 @@ export function createAppearanceStore(initial: {
   }
 
   function getAppearance(): VideoAppearance {
-    return { ...appearance }
+    // Return the same reference — appearance is already replaced with a
+    // new object in setPadding/setRounding/syncControlled when values change.
+    // No spread copy needed. useSyncExternalStore requires stable references.
+    return appearance
   }
 
   function setPadding(value: number) {

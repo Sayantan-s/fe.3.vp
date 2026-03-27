@@ -31,7 +31,11 @@ export function createPlaybackSource(video: HTMLVideoElement): PlaybackSource {
     video.addEventListener(event, onVideoEvent)
   }
 
-  function getState(): PlaybackState {
+  // Cached snapshot — useSyncExternalStore compares with Object.is,
+  // so we must return the same reference when values haven't changed.
+  let cachedState: PlaybackState = buildState()
+
+  function buildState(): PlaybackState {
     return {
       isPlaying: !video.paused && !video.ended,
       currentTime: video.currentTime,
@@ -43,6 +47,28 @@ export function createPlaybackSource(video: HTMLVideoElement): PlaybackSource {
       isSeeking: video.seeking,
       isEnded: video.ended,
     }
+  }
+
+  function stateChanged(a: PlaybackState, b: PlaybackState): boolean {
+    return (
+      a.isPlaying !== b.isPlaying ||
+      a.currentTime !== b.currentTime ||
+      a.duration !== b.duration ||
+      a.volume !== b.volume ||
+      a.isMuted !== b.isMuted ||
+      a.playbackRate !== b.playbackRate ||
+      a.isBuffering !== b.isBuffering ||
+      a.isSeeking !== b.isSeeking ||
+      a.isEnded !== b.isEnded
+    )
+  }
+
+  function getState(): PlaybackState {
+    const next = buildState()
+    if (stateChanged(cachedState, next)) {
+      cachedState = next
+    }
+    return cachedState
   }
 
   function subscribe(listener: () => void): () => void {
