@@ -1,6 +1,7 @@
 import { clamp } from "es-toolkit/math";
-import { buildPlaybackState, playbackStateChanged } from "./utils/playback-state";
-import type { PlaybackSource, PlaybackState, ControlledPlaybackProps } from "./types";
+import { createSubscribable } from "../utils/create-subscribable";
+import { buildPlaybackState, playbackStateChanged } from "../utils/playback-state";
+import type { PlaybackSource, PlaybackState, ControlledPlaybackProps } from "../types";
 
 const VIDEO_EVENTS = [
   "play", "pause", "timeupdate", "durationchange", "volumechange",
@@ -8,16 +9,10 @@ const VIDEO_EVENTS = [
 ] as const;
 
 export function createPlaybackSource(video: HTMLVideoElement): PlaybackSource {
-  const listeners = new Set<() => void>();
+  const { notify, subscribe, clear } = createSubscribable();
   let cachedState: PlaybackState = buildPlaybackState(video);
 
-  function notify() {
-    listeners.forEach((fn) => fn());
-  }
-
-  function onVideoEvent() {
-    notify();
-  }
+  function onVideoEvent() { notify(); }
 
   for (const event of VIDEO_EVENTS) {
     video.addEventListener(event, onVideoEvent);
@@ -25,15 +20,8 @@ export function createPlaybackSource(video: HTMLVideoElement): PlaybackSource {
 
   function getState(): PlaybackState {
     const next = buildPlaybackState(video);
-    if (playbackStateChanged(cachedState, next)) {
-      cachedState = next;
-    }
+    if (playbackStateChanged(cachedState, next)) cachedState = next;
     return cachedState;
-  }
-
-  function subscribe(listener: () => void): () => void {
-    listeners.add(listener);
-    return () => { listeners.delete(listener); };
   }
 
   function syncControlled(props: ControlledPlaybackProps) {
@@ -53,7 +41,7 @@ export function createPlaybackSource(video: HTMLVideoElement): PlaybackSource {
     for (const event of VIDEO_EVENTS) {
       video.removeEventListener(event, onVideoEvent);
     }
-    listeners.clear();
+    clear();
   }
 
   return {
@@ -63,9 +51,6 @@ export function createPlaybackSource(video: HTMLVideoElement): PlaybackSource {
     setVolume: (value: number) => { video.volume = clamp(value, 0, 1); },
     setMuted: (muted: boolean) => { video.muted = muted; },
     setPlaybackRate: (rate: number) => { video.playbackRate = rate; },
-    getState,
-    subscribe,
-    syncControlled,
-    destroy,
+    getState, subscribe, syncControlled, destroy,
   };
 }

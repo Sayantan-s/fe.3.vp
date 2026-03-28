@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { use, useSyncExternalStore } from 'react'
-import { noop } from 'es-toolkit/function'
-import { PlaybackContext } from './context'
-import type { UsePlaybackReturn, PlaybackState } from './types'
+import { use, useSyncExternalStore } from "react";
+import { noop } from "es-toolkit/function";
+import { PlaybackContext } from "./context";
+import type { UsePlaybackReturn, PlaybackState } from "../types";
 
 const IDLE_STATE: PlaybackState = {
   isPlaying: false,
@@ -15,19 +15,19 @@ const IDLE_STATE: PlaybackState = {
   isBuffering: false,
   isSeeking: false,
   isEnded: false,
-}
+};
 
-const IDLE_SUBSCRIBE = (_listener: () => void) => noop
-const IDLE_GET_STATE = () => IDLE_STATE
+const IDLE_SUBSCRIBE = (_listener: () => void) => noop;
+const IDLE_GET_STATE = () => IDLE_STATE;
 
 export function usePlayback(): UsePlaybackReturn {
-  const source = use(PlaybackContext)
+  const source = use(PlaybackContext);
 
   const state = useSyncExternalStore(
     source?.subscribe ?? IDLE_SUBSCRIBE,
     source?.getState ?? IDLE_GET_STATE,
     IDLE_GET_STATE,
-  )
+  );
 
   return {
     ...state,
@@ -37,5 +37,5 @@ export function usePlayback(): UsePlaybackReturn {
     setVolume: source?.setVolume ?? noop,
     setMuted: source?.setMuted ?? noop,
     setPlaybackRate: source?.setPlaybackRate ?? noop,
-  }
+  };
 }

@@ -1,12 +1,16 @@
 "use client";
 
-import { useRef, use } from "react";
-import { PlayerInternalContext } from "./context";
+import { useRef } from "react";
 import { useVideoMesh } from "./hooks/use-video-mesh";
+import { SR_ONLY } from "./utils/sr-only";
 import type { CanvasVideoProps } from "./types";
+import { usePlayerInternalCtx } from "./context/use-player-internal-ctx";
 
-export function CanvasVideo({ videoSrc, "aria-label": ariaLabel }: CanvasVideoProps) {
-  const internal = use(PlayerInternalContext);
+export function CanvasVideo({
+  videoSrc,
+  "aria-label": ariaLabel,
+}: CanvasVideoProps) {
+  const internal = usePlayerInternalCtx();
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useVideoMesh(videoSrc, internal, videoRef);
@@ -22,13 +26,7 @@ export function CanvasVideo({ videoSrc, "aria-label": ariaLabel }: CanvasVideoPr
       src={videoSrc}
       aria-label={ariaLabel ?? "Video"}
       tabIndex={-1}
-      style={{
-        position: "absolute",
-        width: "1px",
-        height: "1px",
-        overflow: "hidden",
-        clip: "rect(0, 0, 0, 0)",
-      }}
+      style={SR_ONLY}
     />
   );
 }

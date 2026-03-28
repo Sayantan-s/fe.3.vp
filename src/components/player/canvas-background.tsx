@@ -1,21 +1,23 @@
 "use client";
 
-import { use } from "react";
-import { PlayerInternalContext } from "./context";
 import { useBackgroundMesh } from "./hooks/use-background-mesh";
 import type { CanvasBackgroundProps } from "./types";
+import { usePlayerInternalCtx } from "./context/use-player-internal-ctx";
+import { Activity } from "react";
 
 export function CanvasBackground({
   backgroundSrc,
   "aria-label": ariaLabel,
 }: CanvasBackgroundProps) {
-  const internal = use(PlayerInternalContext);
+  const internal = usePlayerInternalCtx();
 
   useBackgroundMesh(backgroundSrc, internal);
 
-  if (!internal) return null;
-
-  return ariaLabel ? <div role="img" aria-label={ariaLabel} /> : null;
+  return (
+    <Activity mode={ariaLabel ? "visible" : "hidden"}>
+      <div role="img" aria-label={ariaLabel} />
+    </Activity>
+  );
 }
 
 CanvasBackground.displayName = "CanvasBackground";

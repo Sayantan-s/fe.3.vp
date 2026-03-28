@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createAppearanceStore } from '../appearance-store'
+import { createAppearanceStore } from '../state/appearance-store'
 
 describe('VideoAppearanceStore', () => {
   it('returns defaults when no initial values', () => {

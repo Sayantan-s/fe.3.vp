@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Mesh, PlaneGeometry, type ShaderMaterial } from "three";
-import { createPlaybackSource } from "../playback-source";
+import { createPlaybackSource } from "../state/playback-source";
 import { createVideoMaterial } from "../utils/create-video-material";
 import type { PlayerInternalContextValue, PlaybackSource } from "../types";
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createPlaybackSource } from '../playback-source'
+import { createPlaybackSource } from '../state/playback-source'
 import type { PlaybackSource } from '../types'
 
 function createMockVideo(): HTMLVideoElement {
