@@ -1,0 +1,53 @@
+/* IconButton — base reusable icon button atom */
+
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 150ms, transform 150ms, box-shadow 150ms;
+}
+
+/* --- Variants --- */
+.primary {
+  border-radius: var(--radius-full);
+  background-color: var(--play-btn);
+  color: white;
+}
+
+.ghost {
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+/* --- Sizes --- */
+.sm { width: 28px; height: 28px; }
+.md { width: 36px; height: 36px; }
+.lg { width: 48px; height: 48px; }
+
+/* --- States --- */
+.hover.primary {
+  background-color: var(--play-btn-hover);
+  box-shadow: 0 0 0 4px rgba(91, 108, 252, 0.2);
+}
+
+.hover.ghost { background-color: var(--bg-muted); }
+
+.active.primary {
+  background-color: var(--play-btn-active);
+  transform: scale(0.95);
+}
+
+.active.ghost { background-color: var(--border); }
+
+.disabled {
+  background-color: var(--play-btn-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.disabled.ghost {
+  background-color: transparent;
+}

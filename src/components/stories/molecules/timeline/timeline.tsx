@@ -1,7 +1,8 @@
+import * as Slider from "@radix-ui/react-slider";
 import { cva, type VariantProps } from "class-variance-authority";
 import styles from "./timeline.module.css";
 
-const timelineVariants = cva(styles.base, {
+const timelineVariants = cva(styles.root, {
   variants: {
     state: {
       default: styles.default,
@@ -14,8 +15,7 @@ const timelineVariants = cva(styles.base, {
   defaultVariants: { state: "default" },
 });
 
-export interface TimelineProps
-  extends VariantProps<typeof timelineVariants> {
+export interface TimelineProps extends VariantProps<typeof timelineVariants> {
   currentTime: number;
   duration: number;
   buffered?: number;
@@ -37,29 +37,29 @@ export function Timeline({
   onSeek,
   className,
 }: TimelineProps) {
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const bufferProgress = duration > 0 ? (buffered / duration) * 100 : 0;
+  const bufferPct = duration > 0 ? (buffered / duration) * 100 : 0;
 
   return (
     <div className={timelineVariants({ state, className })}>
       <div className={styles.trackWrap}>
-        <div className={styles.track} />
-        {bufferProgress > 0 && (
-          <div className={styles.buffer} style={{ width: `${bufferProgress}%` }} />
+        {bufferPct > 0 && (
+          <div className={styles.buffer} style={{ width: `${bufferPct}%` }} />
         )}
-        <div className={styles.active} style={{ width: `${progress}%` }} />
-        <div className={styles.playhead} style={{ left: `${progress}%` }} />
-        <input
-          type="range"
-          className={styles.seekInput}
+        <Slider.Root
+          className={styles.slider}
+          value={[currentTime]}
           min={0}
           max={duration || 1}
           step={0.1}
-          value={currentTime}
-          onChange={(e) => onSeek?.(Number(e.target.value))}
-          aria-label="Seek timeline"
+          onValueChange={([v]) => onSeek?.(v)}
           disabled={state === "disabled"}
-        />
+          aria-label="Seek timeline"
+        >
+          <Slider.Track className={styles.track}>
+            <Slider.Range className={styles.range} />
+          </Slider.Track>
+          <Slider.Thumb className={styles.playhead} />
+        </Slider.Root>
       </div>
       <div className={styles.markers}>
         <span className={styles.time}>{formatTimestamp(currentTime)}</span>

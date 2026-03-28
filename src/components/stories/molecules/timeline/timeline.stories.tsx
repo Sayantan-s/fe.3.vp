@@ -2,25 +2,15 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Timeline } from "./timeline";
 
 const meta = {
-  title: "Atoms/Timeline",
+  title: "Molecules/Timeline",
   component: Timeline,
   args: { currentTime: 18, duration: 150 },
   argTypes: {
-    state: {
-      control: "select",
-      options: ["default", "hover", "complete", "buffering", "disabled"],
-    },
+    state: { control: "select", options: ["default", "hover", "complete", "buffering", "disabled"] },
     currentTime: { control: { type: "range", min: 0, max: 150, step: 1 } },
-    duration: { control: "number" },
     buffered: { control: { type: "range", min: 0, max: 150, step: 1 } },
   },
-  decorators: [
-    (Story) => (
-      <div style={{ width: 600, padding: 32 }}>
-        <Story />
-      </div>
-    ),
-  ],
+  decorators: [(Story) => <div style={{ width: 600, padding: 32 }}><Story /></div>],
 } satisfies Meta<typeof Timeline>;
 
 export default meta;

@@ -49,24 +49,24 @@
   --border-light: #F0F0F0;
 
   /* --- Border Radius --- */
-  --radius-none: 0px;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 100px;
+  --radius-none: 0;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 6.25rem;
 
   /* --- Typography --- */
   --font-primary: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* --- Type Scale --- */
-  --text-page-title: 36px;
-  --text-section-heading: 20px;
-  --text-subtitle: 16px;
-  --text-body: 14px;
-  --text-button: 13px;
-  --text-caption: 10px;
+  --text-page-title: 2.25rem;
+  --text-section-heading: 1.25rem;
+  --text-subtitle: 1rem;
+  --text-body: 0.875rem;
+  --text-button: 0.8125rem;
+  --text-caption: 0.625rem;
 
   /* --- Font Weights --- */
   --weight-regular: 400;
@@ -75,15 +75,15 @@
   --weight-bold: 700;
 
   /* --- Component Sizes --- */
-  --play-btn-size: 36px;
-  --play-icon-size: 16px;
-  --skip-icon-size: 14px;
-  --slider-thumb-size: 16px;
-  --slider-track-height: 4px;
-  --timeline-track-height: 2px;
-  --timeline-track-height-hover: 3px;
-  --timeline-playhead-size: 8px;
-  --timeline-playhead-size-hover: 12px;
+  --play-btn-size: 2.25rem;
+  --play-icon-size: 1rem;
+  --skip-icon-size: 0.875rem;
+  --slider-thumb-size: 1rem;
+  --slider-track-height: 0.25rem;
+  --timeline-track-height: 0.125rem;
+  --timeline-track-height-hover: 0.1875rem;
+  --timeline-playhead-size: 0.5rem;
+  --timeline-playhead-size-hover: 0.75rem;
 }
 
 /* ===== Reset ===== */

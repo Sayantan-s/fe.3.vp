@@ -6,11 +6,9 @@ const meta = {
   component: RangeSlider,
   args: { label: "Slider", min: 0, max: 100, defaultValue: 40 },
   argTypes: {
-    state: {
-      control: "select",
-      options: ["default", "hover", "dragging", "disabled"],
-    },
+    state: { control: "select", options: ["default", "hover", "dragging", "disabled"] },
   },
+  decorators: [(Story) => <div style={{ width: 300, padding: 16 }}><Story /></div>],
 } satisfies Meta<typeof RangeSlider>;
 
 export default meta;
