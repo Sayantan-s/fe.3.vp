@@ -72,7 +72,7 @@ export interface PlayerContextValue {
 }
 
 export interface PlayerInternalContextValue {
-  registerMesh: (id: string, mesh: Mesh, zIndex: number) => void
+  registerMesh: (id: string, mesh: Mesh, zIndex: number, aspectRatio?: number) => void
   unregisterMesh: (id: string) => void
   registerPlayback: (playback: PlaybackSource) => void
   unregisterPlayback: () => void

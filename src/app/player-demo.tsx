@@ -64,7 +64,7 @@ export default function PlayerDemo() {
         onError={(e) => console.error("Player error:", e)}
       >
         <Player.Canvas.Background backgroundSrc="/sample-bg.jpg" />
-        <Player.Canvas.Video videoSrc="/video.mp4" />
+        <Player.Canvas.Video videoSrc="/Action_Hero_Video_Generated.mp4" />
         <Controls />
       </Player.Canvas>
     </main>
