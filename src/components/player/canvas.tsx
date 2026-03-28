@@ -441,16 +441,17 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
               className={className}
               style={{ position: "relative", ...style }}
             >
-              <canvas ref={canvasRef} aria-hidden="true" />
+              <canvas
+                ref={canvasRef}
+                aria-hidden="true"
+                style={{ display: "block", width: "100%", height: "100%" }}
+              />
               <div style={SR_ONLY}>
-                {/* Children (Background, Video) render a11y content here:
-                    - Video renders <video> element with aria-label + tabIndex={-1}
-                    - Background renders <div role="img" aria-label="..."> */}
-                {children}
                 <div role="status" aria-live="polite" aria-atomic="true">
                   {announcement}
                 </div>
               </div>
+              {children}
             </div>
           </AppearanceContext>
         </PlaybackContext>
