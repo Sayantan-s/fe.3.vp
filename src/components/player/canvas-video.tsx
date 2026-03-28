@@ -45,6 +45,8 @@ export function CanvasVideo({
       texture.minFilter = LinearFilter;
       texture.magFilter = LinearFilter;
       texture.colorSpace = SRGBColorSpace;
+      // Force first frame to render immediately (even when paused)
+      texture.needsUpdate = true;
 
       const geometry = new PlaneGeometry(1, 1);
       const material = new ShaderMaterial({
@@ -62,7 +64,8 @@ export function CanvasVideo({
       meshRef.current = mesh;
       materialRef.current = material;
 
-      ctx?.registerMesh(LAYER_ID, mesh, Z_INDEX);
+      const aspectRatio = video!.videoWidth / video!.videoHeight || undefined;
+      ctx?.registerMesh(LAYER_ID, mesh, Z_INDEX, aspectRatio);
 
       // Create and register PlaybackSource
       const source = createPlaybackSource(video!);

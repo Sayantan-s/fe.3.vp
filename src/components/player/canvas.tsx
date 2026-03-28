@@ -84,7 +84,7 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
   const sceneRef = useRef<Scene | null>(null);
   const cameraRef = useRef<OrthographicCamera | null>(null);
   const animFrameRef = useRef<number>(0);
-  const meshesRef = useRef<Map<string, { mesh: Mesh; zIndex: number }>>(
+  const meshesRef = useRef<Map<string, { mesh: Mesh; zIndex: number; aspectRatio?: number }>>(
     new Map(),
   );
 
@@ -152,9 +152,9 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
   const internalRef = useRef<PlayerInternalContextValue>(null);
   if (internalRef.current === null) {
     internalRef.current = {
-      registerMesh(id: string, mesh: Mesh, zIndex: number) {
+      registerMesh(id: string, mesh: Mesh, zIndex: number, aspectRatio?: number) {
         mesh.position.z = zIndex;
-        meshesRef.current.set(id, { mesh, zIndex });
+        meshesRef.current.set(id, { mesh, zIndex, aspectRatio });
         sceneRef.current?.add(mesh);
         // Trigger resize so the new mesh gets properly sized and rendered
         requestResizeRef.current?.();
@@ -326,15 +326,47 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
     function updateMeshSizes(w: number, h: number) {
       const appearance = appearanceStore.getAppearance();
 
-      for (const [id, { mesh }] of meshesRef.current) {
+      for (const [id, { mesh, aspectRatio }] of meshesRef.current) {
         if (id === "background") {
+          // Cover fit: maintain image aspect ratio, fill container, crop overflow
+          let bgW = w;
+          let bgH = h;
+          if (aspectRatio && aspectRatio > 0) {
+            const containerAR = w / h;
+            if (containerAR > aspectRatio) {
+              // Container wider than image → match width, overflow height
+              bgW = w;
+              bgH = w / aspectRatio;
+            } else {
+              // Container taller than image → match height, overflow width
+              bgW = h * aspectRatio;
+              bgH = h;
+            }
+          }
           mesh.geometry.dispose();
-          mesh.geometry = new PlaneGeometry(w, h);
+          mesh.geometry = new PlaneGeometry(bgW, bgH);
           mesh.position.set(w / 2, h / 2, 0);
         } else if (id === "video") {
           const pad = (appearance.padding / 100) * Math.min(w, h);
-          const vw = w - pad * 2;
-          const vh = h - pad * 2;
+          const availW = w - pad * 2;
+          const availH = h - pad * 2;
+
+          // Contain-fit: preserve video aspect ratio within the padded area
+          let vw = availW;
+          let vh = availH;
+          if (aspectRatio && aspectRatio > 0) {
+            const containerAR = availW / availH;
+            if (containerAR > aspectRatio) {
+              // Container is wider than the video → fit by height
+              vw = availH * aspectRatio;
+              vh = availH;
+            } else {
+              // Container is taller than the video → fit by width
+              vw = availW;
+              vh = availW / aspectRatio;
+            }
+          }
+
           mesh.geometry.dispose();
           mesh.geometry = new PlaneGeometry(vw, vh);
           mesh.position.set(w / 2, h / 2, 1);
