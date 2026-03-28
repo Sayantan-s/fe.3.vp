@@ -1,0 +1,49 @@
+/* Skip Button — specs from design-system.pen (v6K3g / AtQCb) */
+/* Shape: Rounded Rect | Radius: 8px | Fill: bg-muted | Border: border-light 1px */
+/* Icon: lucide/sparkles 14px | Font: 13px/500 */
+
+.base {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  font-family: var(--font-primary);
+  font-size: var(--text-button);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms;
+}
+
+.default {
+  background-color: var(--bg-muted);
+  color: var(--text-primary);
+}
+
+.default svg {
+  color: var(--text-secondary);
+}
+
+.hover {
+  background-color: var(--border);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.active {
+  background-color: #E0E0E0;
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.disabled {
+  background-color: var(--bg-muted);
+  color: var(--text-disabled);
+  border-color: var(--border-light);
+  cursor: not-allowed;
+}
+
+.disabled svg {
+  color: var(--text-disabled);
+}

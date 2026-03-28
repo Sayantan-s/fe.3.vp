@@ -1,0 +1,39 @@
+/* Play Button — specs from design-system.pen (v6K3g / AtQCb) */
+/* Shape: Circle | Size: 36x36 | Icon: lucide/play 16px */
+
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--play-btn-size);
+  height: var(--play-btn-size);
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  color: white;
+  transition: background-color 150ms, transform 150ms, box-shadow 150ms;
+}
+
+.default {
+  background-color: var(--play-btn);
+}
+
+.hover {
+  background-color: var(--play-btn-hover);
+  box-shadow: 0 0 0 4px rgba(91, 108, 252, 0.2);
+}
+
+.active {
+  background-color: var(--play-btn-active);
+  transform: scale(0.95);
+}
+
+.paused {
+  background-color: var(--play-btn);
+}
+
+.disabled {
+  background-color: var(--play-btn-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}

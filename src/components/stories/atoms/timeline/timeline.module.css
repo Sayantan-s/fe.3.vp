@@ -1,0 +1,107 @@
+/* Timeline — specs from design-system.pen (3GQAc / AtQCb) */
+/* Track: 2px (hover 3px) | Playhead: 8px (hover 12px) */
+/* Colors: bg=#E8E0FF active=#7C5CFC buffer=#D0DBFF disabled=#C0C0C0/#E8E8E8 */
+
+.base {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.trackWrap {
+  position: relative;
+  height: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: var(--timeline-track-height);
+  transform: translateY(-50%);
+  border-radius: var(--radius-full);
+  background: var(--timeline-bg);
+  transition: height 150ms;
+}
+
+.buffer {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: var(--timeline-track-height);
+  transform: translateY(-50%);
+  border-radius: var(--radius-full);
+  background: var(--timeline-buffer);
+}
+
+.active {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: var(--timeline-track-height);
+  transform: translateY(-50%);
+  border-radius: var(--radius-full);
+  background: var(--timeline-active);
+  transition: height 150ms;
+}
+
+.playhead {
+  position: absolute;
+  top: 50%;
+  width: var(--timeline-playhead-size);
+  height: var(--timeline-playhead-size);
+  border-radius: 50%;
+  background: var(--timeline-active);
+  transform: translate(-50%, -50%);
+  transition: width 150ms, height 150ms, box-shadow 150ms;
+  pointer-events: none;
+}
+
+.seekInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+.markers {
+  display: flex;
+  justify-content: space-between;
+}
+
+.time {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--text-tertiary);
+}
+
+/* --- States --- */
+
+.default .track { background: var(--timeline-bg); }
+.default .active { background: var(--timeline-active); }
+.default .playhead { background: var(--timeline-active); }
+
+.hover .track { height: var(--timeline-track-height-hover); }
+.hover .active { height: var(--timeline-track-height-hover); }
+.hover .playhead {
+  width: var(--timeline-playhead-size-hover);
+  height: var(--timeline-playhead-size-hover);
+  box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.2);
+}
+
+.complete .active { width: 100% !important; }
+.complete .playhead { left: 100% !important; }
+
+.buffering .buffer { display: block; }
+
+.disabled .track { background: var(--border); }
+.disabled .active { background: var(--timeline-disabled); }
+.disabled .playhead { background: var(--timeline-disabled); }
+.disabled .seekInput { cursor: not-allowed; }

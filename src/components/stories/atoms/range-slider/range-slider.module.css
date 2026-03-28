@@ -1,0 +1,60 @@
+/* Range Slider — specs from design-system.pen (v6K3g / AtQCb) */
+/* Track: 4px height, slider-track fill | Thumb: 16x16, white fill, slider-thumb 2px border */
+
+.base {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: var(--slider-track-height);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+/* --- Track --- */
+.base::-webkit-slider-runnable-track {
+  height: var(--slider-track-height);
+  border-radius: var(--radius-full);
+  background: var(--slider-track);
+}
+
+/* --- Thumb --- */
+.base::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--slider-thumb);
+  margin-top: calc((var(--slider-track-height) - var(--slider-thumb-size)) / 2);
+  transition: transform 150ms, box-shadow 150ms;
+}
+
+/* --- States --- */
+.default::-webkit-slider-thumb {
+  box-shadow: none;
+}
+
+.hover::-webkit-slider-thumb {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 4px rgba(74, 124, 252, 0.15);
+}
+
+.dragging::-webkit-slider-thumb {
+  background: var(--slider-thumb);
+  border-color: var(--slider-thumb);
+}
+
+.dragging::-webkit-slider-runnable-track {
+  background: var(--accent-blue-light);
+}
+
+.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.disabled::-webkit-slider-thumb {
+  background: var(--border);
+  border-color: var(--text-disabled);
+}
