@@ -19,6 +19,8 @@ export interface TimelineProps extends VariantProps<typeof timelineVariants> {
   currentTime: number;
   duration: number;
   buffered?: number;
+  /** Interval between lap markers in seconds. Default: 15 */
+  lapInterval?: number;
   onSeek?: (time: number) => void;
   className?: string;
 }
@@ -29,21 +31,39 @@ function formatTimestamp(seconds: number): string {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
+function generateLaps(duration: number, interval: number): number[] {
+  if (duration <= 0 || interval <= 0) return [0];
+  const laps: number[] = [];
+  for (let t = 0; t <= duration; t += interval) {
+    laps.push(t);
+  }
+  // Ensure last lap is at the end if not already
+  if (laps[laps.length - 1] !== duration) {
+    laps.push(duration);
+  }
+  return laps;
+}
+
 export function Timeline({
   state,
   currentTime,
   duration,
   buffered = 0,
+  lapInterval = 15,
   onSeek,
   className,
 }: TimelineProps) {
   const bufferPct = duration > 0 ? (buffered / duration) * 100 : 0;
+  const laps = generateLaps(duration, lapInterval);
 
   return (
     <div className={timelineVariants({ state, className })}>
       <div className={styles.trackWrap}>
         {bufferPct > 0 && (
-          <div className={styles.buffer} style={{ width: `${bufferPct}%` }} />
+          <div
+            className={styles.buffer}
+            style={{ width: `${bufferPct}%` }}
+          />
         )}
         <Slider.Root
           className={styles.slider}
@@ -61,9 +81,12 @@ export function Timeline({
           <Slider.Thumb className={styles.playhead} />
         </Slider.Root>
       </div>
-      <div className={styles.markers}>
-        <span className={styles.time}>{formatTimestamp(currentTime)}</span>
-        <span className={styles.time}>{formatTimestamp(duration)}</span>
+      <div className={styles.laps}>
+        {laps.map((t) => (
+          <span key={t} className={styles.lap}>
+            {formatTimestamp(t)}
+          </span>
+        ))}
       </div>
     </div>
   );

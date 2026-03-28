@@ -1,55 +1,107 @@
+"use client";
+
+import { use } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
-import { IconButton, type IconButtonProps } from "../../atoms/icon-button/icon-button";
+import {
+  IconButton,
+  type IconButtonProps,
+} from "../../atoms/icon-button/icon-button";
+import {
+  PlaybackToggleContext,
+  type PlaybackMode,
+} from "./playback-toggle-context";
 
-type PlaybackState = "play" | "pause" | "replay";
+// --- Derive mode from props ---
 
-const ICON_MAP = {
-  play: Play,
-  pause: Pause,
-  replay: RotateCcw,
-} as const;
-
-const LABEL_MAP = {
-  play: "Play",
-  pause: "Pause",
-  replay: "Replay",
-} as const;
-
-export interface PlaybackToggleButtonProps
-  extends Omit<IconButtonProps, "icon" | "aria-label"> {
-  playbackState: PlaybackState;
-  onToggle?: () => void;
+function deriveMode(
+  playbackState: PlaybackMode,
+  currentTime?: number,
+  duration?: number,
+): PlaybackMode {
+  if (
+    duration !== undefined &&
+    currentTime !== undefined &&
+    duration > 0 &&
+    currentTime >= duration
+  ) {
+    return "replay";
+  }
+  return playbackState;
 }
 
-function PlaybackToggleButtonRoot({
+// --- Root (Provider) ---
+
+interface PlaybackToggleRootProps {
+  playbackState: PlaybackMode;
+  onToggle: () => void;
+  currentTime?: number;
+  duration?: number;
+  children: React.ReactNode;
+}
+
+function PlaybackToggleRoot({
   playbackState,
   onToggle,
-  ...props
-}: PlaybackToggleButtonProps) {
+  currentTime,
+  duration,
+  children,
+}: PlaybackToggleRootProps) {
+  const mode = deriveMode(playbackState, currentTime, duration);
+
+  return (
+    <PlaybackToggleContext value={{ mode, onToggle }}>
+      {children}
+    </PlaybackToggleContext>
+  );
+}
+
+// --- Sub-components (consume context, render only when mode matches) ---
+
+type SubProps = Omit<IconButtonProps, "icon" | "aria-label" | "onClick">;
+
+function PlayIcon(props: SubProps) {
+  const ctx = use(PlaybackToggleContext);
+  if (!ctx || ctx.mode !== "play") return null;
   return (
     <IconButton
-      icon={ICON_MAP[playbackState]}
-      aria-label={LABEL_MAP[playbackState]}
-      onClick={onToggle}
+      icon={Play}
+      aria-label="Play"
+      onClick={ctx.onToggle}
       variant="primary"
       {...props}
     />
   );
 }
 
-function PlayIcon(props: Omit<PlaybackToggleButtonProps, "playbackState">) {
-  return <PlaybackToggleButtonRoot playbackState="play" {...props} />;
+function PauseIcon(props: SubProps) {
+  const ctx = use(PlaybackToggleContext);
+  if (!ctx || ctx.mode !== "pause") return null;
+  return (
+    <IconButton
+      icon={Pause}
+      aria-label="Pause"
+      onClick={ctx.onToggle}
+      variant="primary"
+      {...props}
+    />
+  );
 }
 
-function PauseIcon(props: Omit<PlaybackToggleButtonProps, "playbackState">) {
-  return <PlaybackToggleButtonRoot playbackState="pause" {...props} />;
+function ReplayIcon(props: SubProps) {
+  const ctx = use(PlaybackToggleContext);
+  if (!ctx || ctx.mode !== "replay") return null;
+  return (
+    <IconButton
+      icon={RotateCcw}
+      aria-label="Replay"
+      onClick={ctx.onToggle}
+      variant="primary"
+      {...props}
+    />
+  );
 }
 
-function ReplayIcon(props: Omit<PlaybackToggleButtonProps, "playbackState">) {
-  return <PlaybackToggleButtonRoot playbackState="replay" {...props} />;
-}
-
-export const PlaybackToggleButton = Object.assign(PlaybackToggleButtonRoot, {
+export const PlaybackToggleButton = Object.assign(PlaybackToggleRoot, {
   Play: PlayIcon,
   Pause: PauseIcon,
   Replay: ReplayIcon,

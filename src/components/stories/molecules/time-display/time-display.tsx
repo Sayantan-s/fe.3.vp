@@ -12,12 +12,19 @@ function formatTimestamp(seconds: number): string {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-export function TimeDisplay({ currentTime, duration, className }: TimeDisplayProps) {
+export function TimeDisplay({
+  currentTime,
+  duration,
+  className,
+}: TimeDisplayProps) {
   return (
-    <span className={`${styles.root} ${className ?? ""}`} aria-label="Playback time">
+    <div
+      className={`${styles.root} ${className ?? ""}`}
+      aria-label="Playback time"
+    >
       <span className={styles.current}>{formatTimestamp(currentTime)}</span>
       <span className={styles.separator}> / </span>
       <span className={styles.total}>{formatTimestamp(duration)}</span>
-    </span>
+    </div>
   );
 }

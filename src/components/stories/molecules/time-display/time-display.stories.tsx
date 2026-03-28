@@ -15,6 +15,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-export const AtStart: Story = { args: { currentTime: 0, duration: 165 } };
-export const Midway: Story = { args: { currentTime: 82, duration: 165 } };
-export const AtEnd: Story = { args: { currentTime: 165, duration: 165 } };
+export const AtStart: Story = { args: { currentTime: 0 } };
+export const Midway: Story = { args: { currentTime: 82 } };
+export const AtEnd: Story = { args: { currentTime: 165 } };

@@ -65,12 +65,12 @@
   box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.3);
 }
 
-.markers {
+.laps {
   display: flex;
   justify-content: space-between;
 }
 
-.time {
+.lap {
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   color: var(--text-tertiary);
