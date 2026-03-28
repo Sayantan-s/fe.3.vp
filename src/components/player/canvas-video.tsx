@@ -76,6 +76,8 @@ export function CanvasVideo({
       }
     }
 
+    // Ensure src is set — cleanup may have removed it (React strict mode)
+    video.src = videoSrc;
     video.addEventListener("canplay", onCanPlay, { once: true });
     video.addEventListener("error", onError);
     video.load();
@@ -106,8 +108,6 @@ export function CanvasVideo({
       }
 
       video.pause();
-      video.removeAttribute("src");
-      video.load();
     };
   }, [videoSrc, internal]);
 
