@@ -1,9 +1,13 @@
-'use client'
+"use client";
 
-import dynamic from 'next/dynamic'
-
-const PlayerDemo = dynamic(() => import('./player-demo'), { ssr: false })
+import { LeftPanel } from "@/components/feat/left-panel";
+import { RightPanel } from "@/components/feat/right-panel";
 
 export default function Home() {
-  return <PlayerDemo />
+  return (
+    <main>
+      <LeftPanel />
+      <RightPanel />
+    </main>
+  );
 }
