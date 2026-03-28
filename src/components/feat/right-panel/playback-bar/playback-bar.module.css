@@ -1,0 +1,19 @@
+/* PlaybackBar — bottom section of right panel */
+/* Specs: padding 16px 32px 24px 32px, top border border-light */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 32px 24px;
+  border-top: 1px solid var(--border-light);
+}
+
+.controlRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}

@@ -1,0 +1,16 @@
+/* Right Panel — vertical column: video area fills, playback bar at bottom */
+/* Matches design: y0LUc right column (dARH6) */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.videoArea {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}

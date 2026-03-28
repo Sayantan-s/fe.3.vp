@@ -1,7 +1,6 @@
 "use client";
 
-import {
-  Player,
+import Player, {
   usePlayback,
   useAppearance,
 } from "@/components/stories/organisms/player";
