@@ -3,11 +3,13 @@
 import { PlayerCanvas } from "./canvas";
 import { CanvasBackground } from "./canvas-background";
 import { CanvasVideo } from "./canvas-video";
+import { CanvasError } from "./canvas-error";
 
 // Assemble compound component
 const Canvas = Object.assign(PlayerCanvas, {
   Background: CanvasBackground,
   Video: CanvasVideo,
+  Error: CanvasError,
 });
 
 export const Player = { Canvas };
@@ -34,3 +36,4 @@ export type {
   CanvasBackgroundProps,
   CanvasVideoProps,
 } from "./types";
+export type { CanvasErrorProps } from "./canvas-error";

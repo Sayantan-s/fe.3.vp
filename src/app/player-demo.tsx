@@ -1,6 +1,10 @@
 "use client";
 
-import { Player, usePlayback, useAppearance } from "@/components/player";
+import {
+  Player,
+  usePlayback,
+  useAppearance,
+} from "@/components/stories/organisms/player";
 
 function Controls() {
   const playback = usePlayback();

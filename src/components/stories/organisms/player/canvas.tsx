@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, Children, isValidElement } from "react";
+import { useRef } from "react";
 import {
   PlayerContext,
   PlayerInternalContext,
@@ -50,17 +50,10 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const meshesRef = useRef<Map<string, MeshEntry>>(new Map());
-  const [appearanceStore] = useState(() =>
-    createAppearanceStore({ defaultPadding, defaultRounding }),
-  );
 
-  let hasVideo = false;
-  Children.forEach(children, (child) => {
-    if (
-      isValidElement(child) &&
-      (child.type as any)?.displayName === "CanvasVideo"
-    )
-      hasVideo = true;
+  const appearanceStore = createAppearanceStore({
+    defaultPadding,
+    defaultRounding,
   });
 
   const { rendererRef, sceneRef, requestResizeRef } = useThreeRenderer({
@@ -113,17 +106,6 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
   });
 
   useAppearanceEvents({ appearanceStore, onPaddingChange, onRoundingChange });
-
-  if (!hasVideo || playerState.error) {
-    const msg = !hasVideo
-      ? "Player.Canvas requires a <Player.Canvas.Video> child"
-      : (playerState.error?.message ?? "Unknown error");
-    return (
-      <div role="alert" className={className} style={style}>
-        <p>{msg}</p>
-      </div>
-    );
-  }
 
   return (
     <PlayerContext
