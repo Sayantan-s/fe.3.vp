@@ -1,18 +1,28 @@
-'use client'
+"use client";
 
-import { Player, usePlayback, useAppearance } from '@/components/player'
+import { Player, usePlayback, useAppearance } from "@/components/player";
 
 function Controls() {
-  const playback = usePlayback()
-  const appearance = useAppearance()
+  const playback = usePlayback();
+  const appearance = useAppearance();
 
   return (
-    <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16, zIndex: 10 }}>
+    <div
+      style={{
+        position: "absolute",
+        bottom: 16,
+        left: 16,
+        right: 16,
+        zIndex: 10,
+      }}
+    >
       <button
-        aria-label={playback.isPlaying ? 'Pause' : 'Play'}
-        onClick={() => (playback.isPlaying ? playback.pause() : playback.play())}
+        aria-label={playback.isPlaying ? "Pause" : "Play"}
+        onClick={() =>
+          playback.isPlaying ? playback.pause() : playback.play()
+        }
       >
-        {playback.isPlaying ? 'Pause' : 'Play'}
+        {playback.isPlaying ? "Pause" : "Play"}
       </button>
       <input
         type="range"
@@ -40,21 +50,23 @@ function Controls() {
         onChange={(e) => appearance.setRounding(Number(e.target.value))}
       />
     </div>
-  )
+  );
 }
 
 export default function PlayerDemo() {
   return (
-    <main style={{ width: '100vw', height: '100vh' }}>
+    <main style={{ width: "100vw", height: "100vh" }}>
       <Player.Canvas
         aria-label="Demo video player"
-        style={{ width: '100%', height: '100%' }}
-        onError={(e) => console.error('Player error:', e)}
+        style={{ width: "100%", height: "100%" }}
+        defaultPadding={10}
+        defaultRounding={8}
+        onError={(e) => console.error("Player error:", e)}
       >
         <Player.Canvas.Background backgroundSrc="/sample-bg.jpg" />
-        <Player.Canvas.Video videoSrc="/sample-video.mp4" />
+        <Player.Canvas.Video videoSrc="/video.mp4" />
         <Controls />
       </Player.Canvas>
     </main>
-  )
+  );
 }

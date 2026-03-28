@@ -78,9 +78,17 @@ export function CanvasVideo({
 
     // Ensure src is set — cleanup may have removed it (React strict mode)
     video.src = videoSrc;
-    video.addEventListener("canplay", onCanPlay, { once: true });
     video.addEventListener("error", onError);
-    video.load();
+
+    // If the video is already loaded (browser cache), fire immediately.
+    // Otherwise wait for canplay. readyState >= HAVE_CURRENT_DATA means
+    // at least one frame is available for rendering.
+    if (video.readyState >= 2) {
+      onCanPlay();
+    } else {
+      video.addEventListener("canplay", onCanPlay, { once: true });
+      video.load();
+    }
 
     return () => {
       disposed = true;
