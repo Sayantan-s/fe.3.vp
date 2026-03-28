@@ -1,487 +1,63 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  Children,
-  isValidElement,
-  type CSSProperties,
-} from "react";
-import {
-  WebGLRenderer,
-  Scene,
-  OrthographicCamera,
-  Mesh,
-  PlaneGeometry,
-} from "three";
-import {
-  PlayerContext,
-  PlayerInternalContext,
-  PlaybackContext,
-  AppearanceContext,
-} from "./context";
+import { useRef, useState, Children, isValidElement } from "react";
+import { PlayerContext, PlayerInternalContext, PlaybackContext, AppearanceContext } from "./context";
 import { createAppearanceStore } from "./appearance-store";
-import type {
-  PlayerCanvasProps,
-  PlayerState,
-  PlayerInternalContextValue,
-  PlaybackSource,
-  PlaybackState,
-  VideoAppearanceStore,
-  VideoAppearance,
-} from "./types";
-
-const SR_ONLY: CSSProperties = {
-  position: "absolute",
-  width: "1px",
-  height: "1px",
-  padding: 0,
-  margin: "-1px",
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  whiteSpace: "nowrap",
-  borderWidth: 0,
-};
+import { usePlayerInternal } from "./hooks/use-player-internal";
+import { useThreeRenderer } from "./hooks/use-three-renderer";
+import { usePlaybackEvents } from "./hooks/use-playback-events";
+import { useAppearanceEvents } from "./hooks/use-appearance-events";
+import { useControlledSync } from "./hooks/use-controlled-sync";
+import { SR_ONLY } from "./utils/sr-only";
+import type { PlayerCanvasProps } from "./types";
+import type { MeshEntry } from "./utils/mesh-layout";
 
 export function PlayerCanvas(props: PlayerCanvasProps) {
   const {
-    "aria-label": ariaLabel,
-    children,
-    className,
-    style,
-    // Controlled playback
-    playing,
-    currentTime,
-    volume,
-    muted,
-    playbackRate,
-    // Controlled appearance
-    padding: controlledPadding,
-    rounding: controlledRounding,
-    defaultPadding,
-    defaultRounding,
-    // Event callbacks
-    onPlay,
-    onPause,
-    onEnded,
-    onTimeUpdate,
-    onDurationChange,
-    onSeeking,
-    onSeeked,
-    onReady,
-    onBuffering,
-    onVolumeChange,
-    onPaddingChange,
-    onRoundingChange,
-    onError,
+    "aria-label": ariaLabel, children, className, style,
+    playing, currentTime, volume, muted, playbackRate,
+    padding, rounding, defaultPadding, defaultRounding,
+    onPlay, onPause, onEnded, onTimeUpdate, onDurationChange,
+    onSeeking, onSeeked, onReady, onBuffering, onVolumeChange,
+    onPaddingChange, onRoundingChange, onError,
   } = props;
 
-  // Refs for Three.js
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<WebGLRenderer | null>(null);
-  const sceneRef = useRef<Scene | null>(null);
-  const cameraRef = useRef<OrthographicCamera | null>(null);
-  const animFrameRef = useRef<number>(0);
-  const meshesRef = useRef<Map<string, { mesh: Mesh; zIndex: number; aspectRatio?: number }>>(
-    new Map(),
-  );
+  const meshesRef = useRef<Map<string, MeshEntry>>(new Map());
+  const [appearanceStore] = useState(() => createAppearanceStore({ defaultPadding, defaultRounding }));
 
-  // Playback source registered by Video child
-  const [playbackSource, setPlaybackSource] = useState<PlaybackSource | null>(
-    null,
-  );
-
-  // Appearance store
-  const [appearanceStore] = useState(() =>
-    createAppearanceStore({ defaultPadding, defaultRounding }),
-  );
-
-  // --- Validate children (pure render-time derivation) ---
   let hasVideo = false;
   Children.forEach(children, (child) => {
-    if (
-      isValidElement(child) &&
-      (child.type as any)?.displayName === "CanvasVideo"
-    ) {
-      hasVideo = true;
-    }
+    if (isValidElement(child) && (child.type as any)?.displayName === "CanvasVideo") hasVideo = true;
   });
-  const missingVideo = !hasVideo;
 
-  // Player state
-  const [playerState, setPlayerState] = useState<PlayerState>(() => ({
-    isReady: false,
-    error: missingVideo
-      ? new Error(
-          "Player.Canvas requires at least one <Player.Canvas.Video> child",
-        )
-      : null,
-  }));
+  const { rendererRef, sceneRef, requestResizeRef } = useThreeRenderer({
+    containerRef, canvasRef, meshesRef, appearanceStore,
+    reportError: (e: Error) => onError?.(e), clearError: () => {},
+  });
 
-  // Announcement for a11y
-  const [announcement, setAnnouncement] = useState("");
+  const { internalValue, playbackSource, playerState, announcement, setAnnouncement } =
+    usePlayerInternal({ sceneRef, meshesRef, requestResizeRef, onError, onReady });
 
-  // Fire onError for validation failures (side effect → useEffect)
-  useEffect(() => {
-    if (missingVideo) {
-      onError?.(
-        new Error(
-          "Player.Canvas requires at least one <Player.Canvas.Video> child",
-        ),
-      );
-    }
-  }, [missingVideo]);
+  useControlledSync({ playbackSource, appearanceStore, playing, currentTime, volume, muted, playbackRate, padding, rounding });
+  usePlaybackEvents({ playbackSource, setAnnouncement, onPlay, onPause, onEnded, onTimeUpdate, onDurationChange, onSeeking, onSeeked, onBuffering, onVolumeChange });
+  useAppearanceEvents({ appearanceStore, onPaddingChange, onRoundingChange });
 
-  // --- Internal context (stable ref to avoid infinite re-render loops) ---
-  // Children effects depend on the internal context value. If this object changes
-  // identity every render, child effects cleanup/re-run, which call setState on
-  // Canvas, causing another render → infinite loop. Using a ref-backed object
-  // ensures stable identity while the closures inside always read latest state.
-
-  const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
-  const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
-
-  // Bridge between stable context methods and the Three.js effect.
-  // The effect sets this to a function that resizes + renders.
-  const requestResizeRef = useRef<(() => void) | null>(null);
-
-  const internalRef = useRef<PlayerInternalContextValue>(null);
-  if (internalRef.current === null) {
-    internalRef.current = {
-      registerMesh(id: string, mesh: Mesh, zIndex: number, aspectRatio?: number) {
-        mesh.position.z = zIndex;
-        meshesRef.current.set(id, { mesh, zIndex, aspectRatio });
-        sceneRef.current?.add(mesh);
-        // Trigger resize so the new mesh gets properly sized and rendered
-        requestResizeRef.current?.();
-      },
-      unregisterMesh(id: string) {
-        const entry = meshesRef.current.get(id);
-        if (entry) {
-          sceneRef.current?.remove(entry.mesh);
-          meshesRef.current.delete(id);
-        }
-      },
-      registerPlayback(source: PlaybackSource) {
-        setPlaybackSource(source);
-        setPlayerState((prev) => ({ ...prev, isReady: true }));
-        onReadyRef.current?.();
-        setAnnouncement("Video ready");
-      },
-      unregisterPlayback() {
-        setPlaybackSource(null);
-        setPlayerState((prev) => ({ ...prev, isReady: false }));
-      },
-      registerAppearance(_store: VideoAppearanceStore) {},
-      unregisterAppearance() {},
-      reportError(error: Error) {
-        setPlayerState((prev) => ({ ...prev, error }));
-        onErrorRef.current?.(error);
-        setAnnouncement(`Error: ${error.message}`);
-      },
-      clearError() {
-        setPlayerState((prev) => ({ ...prev, error: null }));
-      },
-    };
+  if (!hasVideo || playerState.error) {
+    const msg = !hasVideo ? "Player.Canvas requires a <Player.Canvas.Video> child" : playerState.error?.message ?? "Unknown error";
+    return <div role="alert" className={className} style={style}><p>{msg}</p></div>;
   }
-  const internalValue = internalRef.current;
-
-  // --- Sync controlled playback props ---
-
-  useEffect(() => {
-    if (playbackSource) {
-      playbackSource.syncControlled({
-        playing,
-        currentTime,
-        volume,
-        muted,
-        playbackRate,
-      });
-    }
-  }, [playbackSource, playing, currentTime, volume, muted, playbackRate]);
-
-  // --- Sync controlled appearance props ---
-
-  useEffect(() => {
-    appearanceStore.syncControlled({
-      padding: controlledPadding,
-      rounding: controlledRounding,
-    });
-  }, [appearanceStore, controlledPadding, controlledRounding]);
-
-  // --- Subscribe to playback events for callbacks ---
-
-  useEffect(() => {
-    if (!playbackSource) return;
-
-    let prevState: PlaybackState = playbackSource.getState();
-
-    const unsub = playbackSource.subscribe(() => {
-      const next = playbackSource.getState();
-
-      if (!prevState.isPlaying && next.isPlaying) {
-        onPlay?.();
-        setAnnouncement("Playing");
-      }
-      if (prevState.isPlaying && !next.isPlaying && !next.isEnded) {
-        onPause?.();
-        setAnnouncement(`Paused at ${formatTime(next.currentTime)}`);
-      }
-      if (!prevState.isEnded && next.isEnded) {
-        onEnded?.();
-        setAnnouncement("Video ended");
-      }
-      if (prevState.currentTime !== next.currentTime) {
-        onTimeUpdate?.(next.currentTime);
-      }
-      if (prevState.duration !== next.duration) {
-        onDurationChange?.(next.duration);
-      }
-      if (!prevState.isSeeking && next.isSeeking) {
-        onSeeking?.();
-      }
-      if (prevState.isSeeking && !next.isSeeking) {
-        onSeeked?.();
-      }
-      if (!prevState.isBuffering && next.isBuffering) {
-        onBuffering?.();
-        setAnnouncement("Buffering");
-      }
-      if (
-        prevState.volume !== next.volume ||
-        prevState.isMuted !== next.isMuted
-      ) {
-        onVolumeChange?.(next.volume, next.isMuted);
-      }
-
-      prevState = next;
-    });
-
-    return unsub;
-  }, [playbackSource]);
-
-  // --- Subscribe to appearance changes for callbacks ---
-
-  useEffect(() => {
-    let prev: VideoAppearance = appearanceStore.getAppearance();
-
-    const unsub = appearanceStore.subscribe(() => {
-      const next = appearanceStore.getAppearance();
-      if (prev.padding !== next.padding) {
-        onPaddingChange?.(next.padding);
-      }
-      if (prev.rounding !== next.rounding) {
-        onRoundingChange?.(next.rounding);
-      }
-      prev = next;
-    });
-
-    return unsub;
-  }, [appearanceStore]);
-
-  // --- Three.js setup ---
-
-  useEffect(() => {
-    const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (!container || !canvas) return;
-
-    const renderer = new WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: true,
-    });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    rendererRef.current = renderer;
-
-    const scene = new Scene();
-    sceneRef.current = scene;
-
-    // OrthographicCamera(left, right, top, bottom, near, far)
-    // top > bottom for standard screen-space (Y=0 at bottom)
-    const camera = new OrthographicCamera(0, 1, 1, 0, 0.1, 1000);
-    camera.position.z = 10;
-    cameraRef.current = camera;
-
-    // Resize handler
-    function resize() {
-      const { clientWidth: w, clientHeight: h } = container!;
-      if (w === 0 || h === 0) return;
-
-      renderer.setSize(w, h);
-      camera.left = 0;
-      camera.right = w;
-      camera.top = h;
-      camera.bottom = 0;
-      camera.updateProjectionMatrix();
-
-      updateMeshSizes(w, h);
-      renderer.render(scene, camera);
-    }
-
-    function updateMeshSizes(w: number, h: number) {
-      const appearance = appearanceStore.getAppearance();
-
-      for (const [id, { mesh, aspectRatio }] of meshesRef.current) {
-        if (id === "background") {
-          // Cover fit: maintain image aspect ratio, fill container, crop overflow
-          let bgW = w;
-          let bgH = h;
-          if (aspectRatio && aspectRatio > 0) {
-            const containerAR = w / h;
-            if (containerAR > aspectRatio) {
-              // Container wider than image → match width, overflow height
-              bgW = w;
-              bgH = w / aspectRatio;
-            } else {
-              // Container taller than image → match height, overflow width
-              bgW = h * aspectRatio;
-              bgH = h;
-            }
-          }
-          mesh.geometry.dispose();
-          mesh.geometry = new PlaneGeometry(bgW, bgH);
-          mesh.position.set(w / 2, h / 2, 0);
-        } else if (id === "video") {
-          const pad = (appearance.padding / 100) * Math.min(w, h);
-          const availW = w - pad * 2;
-          const availH = h - pad * 2;
-
-          // Contain-fit: preserve video aspect ratio within the padded area
-          let vw = availW;
-          let vh = availH;
-          if (aspectRatio && aspectRatio > 0) {
-            const containerAR = availW / availH;
-            if (containerAR > aspectRatio) {
-              // Container is wider than the video → fit by height
-              vw = availH * aspectRatio;
-              vh = availH;
-            } else {
-              // Container is taller than the video → fit by width
-              vw = availW;
-              vh = availW / aspectRatio;
-            }
-          }
-
-          mesh.geometry.dispose();
-          mesh.geometry = new PlaneGeometry(vw, vh);
-          mesh.position.set(w / 2, h / 2, 1);
-
-          const mat = mesh.material as import("three").ShaderMaterial;
-          if (mat.uniforms) {
-            mat.uniforms.resolution.value.set(vw, vh);
-            mat.uniforms.radius.value =
-              (appearance.rounding / 100) * Math.min(vw, vh) * 0.5;
-          }
-        }
-      }
-    }
-
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(container);
-    resize();
-
-    // Allow registerMesh to trigger a resize + render for newly added meshes
-    requestResizeRef.current = resize;
-
-    // Appearance change → update meshes
-    const unsubAppearance = appearanceStore.subscribe(() => {
-      const { clientWidth: w, clientHeight: h } = container!;
-      updateMeshSizes(w, h);
-      renderer.render(scene, camera);
-    });
-
-    // Render loop — always runs. VideoTexture needs continuous rendering
-    // to display new video frames. Cost is negligible (two quads on GPU).
-    let running = true;
-
-    function animate() {
-      if (!running) return;
-      animFrameRef.current = requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
-
-    animate();
-
-    // WebGL context loss
-    function onContextLost(e: Event) {
-      e.preventDefault();
-      running = false;
-      cancelAnimationFrame(animFrameRef.current);
-      internalValue.reportError(new Error("WebGL context lost"));
-    }
-
-    function onContextRestored() {
-      // Recreate renderer after context restore
-      renderer.dispose();
-      const newRenderer = new WebGLRenderer({
-        canvas: canvas!,
-        alpha: true,
-        antialias: true,
-      });
-      newRenderer.setPixelRatio(window.devicePixelRatio);
-      rendererRef.current = newRenderer;
-
-      running = true;
-      resize();
-      animate();
-      internalValue.clearError();
-    }
-
-    canvas.addEventListener("webglcontextlost", onContextLost);
-    canvas.addEventListener("webglcontextrestored", onContextRestored);
-
-    return () => {
-      running = false;
-      cancelAnimationFrame(animFrameRef.current);
-      resizeObserver.disconnect();
-      unsubAppearance();
-      canvas.removeEventListener("webglcontextlost", onContextLost);
-      canvas.removeEventListener("webglcontextrestored", onContextRestored);
-      renderer.dispose();
-      requestResizeRef.current = null;
-      rendererRef.current = null;
-      sceneRef.current = null;
-      cameraRef.current = null;
-    };
-  }, [appearanceStore]);
-
-  // --- Public context ---
-
-  const contextValue = {
-    state: playerState,
-    meta: {
-      canvasRef,
-      rendererRef,
-      sceneRef,
-    },
-  };
 
   return (
-    <PlayerContext value={contextValue}>
+    <PlayerContext value={{ state: playerState, meta: { canvasRef, rendererRef, sceneRef } }}>
       <PlayerInternalContext value={internalValue}>
         <PlaybackContext value={playbackSource}>
           <AppearanceContext value={appearanceStore}>
-            <div
-              ref={containerRef}
-              role="group"
-              aria-label={ariaLabel}
-              className={className}
-              style={{ position: "relative", ...style }}
-            >
-              <canvas
-                ref={canvasRef}
-                aria-hidden="true"
-                style={{ display: "block", width: "100%", height: "100%" }}
-              />
+            <div ref={containerRef} role="group" aria-label={ariaLabel} className={className} style={{ position: "relative", ...style }}>
+              <canvas ref={canvasRef} aria-hidden="true" style={{ display: "block", width: "100%", height: "100%" }} />
               <div style={SR_ONLY}>
-                <div role="status" aria-live="polite" aria-atomic="true">
-                  {announcement}
-                </div>
+                <div role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
               </div>
               {children}
             </div>
@@ -490,10 +66,4 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
       </PlayerInternalContext>
     </PlayerContext>
   );
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
