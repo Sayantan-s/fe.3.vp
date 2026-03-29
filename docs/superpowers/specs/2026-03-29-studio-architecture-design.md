@@ -164,39 +164,69 @@ No API round-trip for mutations. API fetch is only for initial data load. Action
 ```ts
 // hooks/use-studio-data.ts
 function useStudioData(videoId: string) {
-  const [state, setState] = useState({ ... });
+  const [state, setState] = useState({
+    videoData: null,
+    transcriptData: null,
+    videoError: null,
+    transcriptError: null,
+    isLoading: true,
+  });
 
   useEffect(() => {
     const controller = new AbortController();
+    const signal = controller.signal;
 
     (async () => {
       const results = await Promise.allSettled([
-        fetch(`/api/video/${videoId}`, { signal: controller.signal }),
-        fetch(`/api/video/${videoId}/transcript`, { signal: controller.signal }),
+        fetch(`/api/video/${videoId}`, { signal }),
+        fetch(`/api/video/${videoId}/transcript`, { signal }),
       ]);
+
+      if (signal.aborted) return;
 
       const [videoResult, transcriptResult] = results;
 
-      const videoData = videoResult.status === "fulfilled"
-        ? await videoResult.value.json()
-        : null;
+      // Video data — check both settlement AND HTTP status
+      let videoData = null;
+      let videoError = null;
+      if (videoResult.status === "fulfilled") {
+        if (videoResult.value.ok) {
+          videoData = await videoResult.value.json();
+        } else {
+          videoError = `Video fetch failed: ${videoResult.value.status}`;
+        }
+      } else {
+        videoError = videoResult.reason?.message ?? "Video fetch failed";
+      }
 
-      const transcriptData = transcriptResult.status === "fulfilled"
-        ? await transcriptResult.value.json()
-        : null;
+      // Transcript data — same pattern
+      let transcriptData = null;
+      let transcriptError = null;
+      if (transcriptResult.status === "fulfilled") {
+        if (transcriptResult.value.ok) {
+          transcriptData = await transcriptResult.value.json();
+        } else {
+          transcriptError = `Transcript fetch failed: ${transcriptResult.value.status}`;
+        }
+      } else {
+        transcriptError = transcriptResult.reason?.message ?? "Transcript fetch failed";
+      }
 
-      setState({ videoData, transcriptData, ... });
+      if (signal.aborted) return;
+      setState({ videoData, transcriptData, videoError, transcriptError, isLoading: false });
     })();
 
     return () => controller.abort();
   }, [videoId]);
 
-  return { videoData, transcriptData, videoError, transcriptError, isLoading };
+  return state;
 }
 ```
 
 - Single `useEffect`, single tick — both requests depart simultaneously.
 - `Promise.allSettled` — one failure doesn't reject the other. Video can load even if transcript fails.
+- **Error handling**: checks both `allSettled` rejection AND HTTP `response.ok` status. Extracts error messages for each domain independently.
+- **Abort guard**: checks `signal.aborted` after async operations to avoid state updates on unmounted components.
 - Single `AbortController` cleans up both in-flight requests on unmount or `videoId` change.
 - `StudioProvider` consumes this hook and distributes results to domain providers.
 
@@ -243,7 +273,35 @@ export default function RightPanelPage() {
 
 Player stays fully controlled/dumb. Receives all values as props from the context consumer. Three.js bundle only downloads when the right panel renders.
 
-### 4.2 ControlsPanel (No Props)
+### 4.2 Slider Molecule (New)
+
+New compound component at `src/components/stories/molecules/slider/`. Wraps the existing `RangeSlider` atom with label, lower bound, and upper bound.
+
+**Location:** `src/components/stories/molecules/slider/slider.tsx`
+
+**Anatomy:**
+```tsx
+<Slider value={padding} onChange={onPaddingChange} min={0} max={32}>
+  <Slider.Label>Padding</Slider.Label>
+  <Slider.Track>
+    <Slider.LowerBound />
+    <Slider.Track />
+    <Slider.UpperBound />
+  </Slider.Track>
+</Slider>
+```
+
+**Implementation approach:**
+- Root `Slider` component provides context (`value`, `onChange`, `min`, `max`, `step`) to children
+- `Slider.Label` renders the label text (uses existing `.label` styles from controls-panel)
+- `Slider.Track` is a flex row container for bounds + the actual slider track
+- `Slider.LowerBound` reads `min` from context, formats and displays it (e.g., `"00"`)
+- `Slider.UpperBound` reads `max` from context, formats and displays it (e.g., `"32"`)
+- Inner `Slider.Track` renders the existing `RangeSlider` atom with values from context
+- Built using the `Object.assign` compound component pattern (same as Player.Canvas)
+- Styles absorbed from existing `controls-panel.module.css` (`.label`, `.bound`, `.sliderRow`)
+
+### 4.3 ControlsPanel (No Props)
 
 ```tsx
 function ControlsPanel() {
@@ -251,29 +309,45 @@ function ControlsPanel() {
   const { setPadding, setRounding } = useVideoDataActions();
 
   return (
-    <>
-      <RangeSlider label="Padding" value={padding} onValueChange={setPadding} />
-      <RangeSlider label="Rounding" value={rounding} onValueChange={setRounding} />
-    </>
+    <div className={styles.root}>
+      <Slider value={padding} onChange={setPadding} min={0} max={32}>
+        <Slider.Label>Padding</Slider.Label>
+        <Slider.Track>
+          <Slider.LowerBound />
+          <Slider.Track />
+          <Slider.UpperBound />
+        </Slider.Track>
+      </Slider>
+
+      <Slider value={rounding} onChange={setRounding} min={0} max={32}>
+        <Slider.Label>Rounding</Slider.Label>
+        <Slider.Track>
+          <Slider.LowerBound />
+          <Slider.Track />
+          <Slider.UpperBound />
+        </Slider.Track>
+      </Slider>
+    </div>
   );
 }
 ```
 
-Zero props. Everything from context. No prop drilling anywhere.
+Zero props. Everything from context. No prop drilling anywhere. Slider molecule encapsulates all the label/bounds/track layout that was previously manual in ControlsPanel.
 
-### 4.3 Changes to Existing Components
+### 4.4 Changes to Existing Components
 
 | Component | Change |
 |-----------|--------|
 | `src/app/page.tsx` | Replace with redirect to `/studio/test-d-123` |
 | `LeftPanel` | Remove all props — reads from context internally |
-| `ControlsPanel` | Remove all props — uses `useVideoDataState` + `useVideoDataActions` |
+| `ControlsPanel` | Remove all props — uses Slider molecule + context hooks |
 | `RightPanel` | Remove props — reads context, wraps Player in `Suspense` + `lazy` |
 | `Player.Canvas` | **No changes** — stays dumb/controlled |
 | `PlaybackBar` | **No changes** — uses internal Player contexts |
 | `feat/context/` | Full rewrite — new contexts, hooks, providers |
+| **New:** `molecules/slider/` | Compound Slider molecule wrapping RangeSlider atom |
 
-### 4.4 Skeleton Components
+### 4.5 Skeleton Components
 
 - **LeftPanelSkeleton**: Animated text line placeholders (transcript area) + slider track placeholders (controls area)
 - **RightPanelSkeleton**: Rounded rectangle placeholder (player area) + play button circle + timeline bar (playback area)
