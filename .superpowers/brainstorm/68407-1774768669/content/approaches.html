@@ -1,0 +1,77 @@
+<h2>Architecture Approaches</h2>
+<p class="subtitle">Code splitting, context architecture, and parallel routes for the video studio</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Full Parallel Routes — 3 Slots</h3>
+      <p><strong>Structure:</strong> <code>/studio/[id]/layout.tsx</code> with <code>@leftPanel</code>, <code>@rightPanel</code>, and <code>@transcript</code> as separate parallel route slots</p>
+      <p><strong>Context:</strong> Layout provides <code>VideoDataStateContext</code> + <code>VideoDataActionsContext</code> + <code>TranscriptStateContext</code> + <code>TranscriptActionsContext</code>. Both APIs fetched concurrently in a shared hook, state split across domains.</p>
+      <p><strong>Player:</strong> Lazy loaded via <code>React.lazy</code> + <code>Suspense</code> inside <code>@rightPanel</code>. Receives padding/rounding/bg/videoUrl as controlled props from context consumer.</p>
+      <p><strong>Skeleton:</strong> Each slot gets its own <code>loading.tsx</code> for route-level skeletons, plus <code>Suspense</code> fallbacks for the lazy player.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Maximum code splitting — 3 independent bundles</li>
+          <li>Clean architectural boundaries at the route level</li>
+          <li>Each slot gets independent loading/error via Next.js conventions</li>
+          <li>Transcript panel is fully isolated for future work</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>3 slots adds routing complexity — need <code>default.tsx</code> for each</li>
+          <li>Transcript slot is mostly empty right now (placeholder)</li>
+          <li>Left panel layout (transcript above, controls below) harder to achieve across 2 separate slots</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Two Parallel Routes — Left + Right Slots</h3>
+      <p><strong>Structure:</strong> <code>/studio/[id]/layout.tsx</code> with <code>@leftPanel</code> and <code>@rightPanel</code>. Transcript stays as a component inside <code>@leftPanel</code> (not its own slot).</p>
+      <p><strong>Context:</strong> Same 4-context split (VideoData state/actions, Transcript state/actions). Layout provides all contexts.</p>
+      <p><strong>Player:</strong> Lazy loaded inside <code>@rightPanel</code>. Controlled by VideoData context values.</p>
+      <p><strong>Skeleton:</strong> <code>@leftPanel/loading.tsx</code> and <code>@rightPanel/loading.tsx</code> for route-level skeletons. Additional <code>Suspense</code> boundary around lazy Player.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>2 clean bundles — left panel vs right panel</li>
+          <li>Left panel layout stays natural (transcript + controls in one flex column)</li>
+          <li>Simpler routing — 2 slots instead of 3</li>
+          <li>Transcript still isolated via context, can become its own slot later</li>
+          <li>Matches the visual layout: sidebar | main</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Transcript not code-split from controls (both in @leftPanel bundle)</li>
+          <li>Less granular than 3-slot approach</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Two Parallel Routes + Nested Parallel for Transcript</h3>
+      <p><strong>Structure:</strong> <code>/studio/[id]/layout.tsx</code> with <code>@leftPanel</code> and <code>@rightPanel</code>. Inside <code>@leftPanel</code>, a nested layout with <code>@transcript</code> and <code>@controls</code> as sub-slots.</p>
+      <p><strong>Context:</strong> Same 4-context split. Top layout provides all contexts.</p>
+      <p><strong>Player:</strong> Lazy loaded inside <code>@rightPanel</code>. Controlled props from context.</p>
+      <p><strong>Skeleton:</strong> Route-level skeletons at both levels. Transcript and controls can load independently within the left panel.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Maximum isolation — transcript, controls, and player are all separate bundles</li>
+          <li>Left panel layout preserved via nested layout</li>
+          <li>Each sub-component can have its own loading/error boundary</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Most complex routing setup — nested parallel routes</li>
+          <li>Overkill given transcript is a placeholder right now</li>
+          <li>Harder to reason about for future developers</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top: 2rem;"><strong>Recommendation:</strong> Approach B — it gives you the code splitting and architectural separation you want with minimal routing overhead. When transcript becomes real, promoting it to its own slot is a small diff.</p>

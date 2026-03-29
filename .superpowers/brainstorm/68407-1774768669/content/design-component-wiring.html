@@ -1,0 +1,173 @@
+<h2>Design — Section 4: Component Wiring & Player Integration</h2>
+<p class="subtitle">How the pieces connect — from context to controlled Player</p>
+
+<div class="section">
+  <h3>Full Component Tree</h3>
+  <div class="mockup">
+    <div class="mockup-header">Runtime hierarchy after all providers mount</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 2; padding: 1.5rem;">
+      <div><span style="color: #888;">RootLayout (server)</span></div>
+      <div style="margin-left: 1rem;"><span style="color: #888;">StudioLayout (server) — reads [id] from params</span></div>
+      <div style="margin-left: 2rem;"><span style="color: #7ee787;">StudioProvider</span> <span style="color: #888;">"use client" — calls useStudioData(id)</span></div>
+      <div style="margin-left: 3rem;"><span style="color: #7ee787;">VideoDataProvider</span> <span style="color: #888;">— owns padding/rounding/bg/videoUrl state + actions</span></div>
+      <div style="margin-left: 4rem;"><span style="color: #7ee787;">TranscriptProvider</span> <span style="color: #888;">— owns text/words state</span></div>
+      <div style="margin-left: 5rem;"><span style="color: #79c0ff;">main.root</span> <span style="color: #888;">(flex row)</span></div>
+      <div style="margin-left: 6rem; border-left: 2px solid #79c0ff; padding-left: 1rem;">
+        <div><span style="color: #79c0ff; font-weight: bold;">@leftPanel slot</span></div>
+        <div style="margin-left: 1rem;"><span style="color: #ffa657;">LeftPanel</span></div>
+        <div style="margin-left: 2rem;"><span style="color: #ccc;">TranscriptPanel</span> <span style="color: #888;">— reads useTranscriptState()</span></div>
+        <div style="margin-left: 2rem;"><span style="color: #ccc;">ControlsPanel</span> <span style="color: #888;">— reads useVideoDataState() + useVideoDataActions()</span></div>
+        <div style="margin-left: 3rem;"><span style="color: #888;">RangeSlider (padding)</span></div>
+        <div style="margin-left: 3rem;"><span style="color: #888;">RangeSlider (rounding)</span></div>
+      </div>
+      <div style="margin-left: 6rem; border-left: 2px solid #d2a8ff; padding-left: 1rem; margin-top: 0.5rem;">
+        <div><span style="color: #d2a8ff; font-weight: bold;">@rightPanel slot</span></div>
+        <div style="margin-left: 1rem;"><span style="color: #ffa657;">RightPanel</span> <span style="color: #888;">— reads useVideoDataState()</span></div>
+        <div style="margin-left: 2rem;"><span style="color: #d2a8ff;">Suspense</span> <span style="color: #888;">fallback={PlayerSkeleton}</span></div>
+        <div style="margin-left: 3rem;"><span style="color: #d2a8ff;">LazyPlayer.Canvas</span> <span style="color: #888;">(controlled — receives props)</span></div>
+        <div style="margin-left: 4rem;"><span style="color: #888;">Player.Canvas.Background (bg from context)</span></div>
+        <div style="margin-left: 4rem;"><span style="color: #888;">Player.Canvas.Video (videoUrl from context)</span></div>
+        <div style="margin-left: 4rem;"><span style="color: #888;">PlaybackBar (internal playback context)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>RightPanel — Player Integration</h3>
+  <div class="mockup">
+    <div class="mockup-header">@rightPanel/page.tsx</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.8; padding: 1.5rem;">
+      <div style="color: #888;">// "use client"</div>
+      <div style="color: #888;">// Player is lazy loaded — Three.js bundle stays out of initial chunk</div>
+      <div><br></div>
+      <div><span style="color: #ff7b72;">const</span> LazyPlayer = <span style="color: #d2a8ff;">lazy</span>(() =></div>
+      <div style="margin-left: 1.5rem;"><span style="color: #d2a8ff;">import</span>(<span style="color: #79c0ff;">"@/components/stories/organisms/player"</span>)</div>
+      <div>);</div>
+      <div><br></div>
+      <div><span style="color: #ff7b72;">export default function</span> <span style="color: #d2a8ff;">RightPanelPage</span>() {</div>
+      <div style="margin-left: 1.5rem;"><span style="color: #ff7b72;">const</span> { videoUrl, bg, padding, rounding, isLoading, error } = <span style="color: #d2a8ff;">useVideoDataState</span>();</div>
+      <div><br></div>
+      <div style="margin-left: 1.5rem;"><span style="color: #ff7b72;">if</span> (isLoading) <span style="color: #ff7b72;">return</span> &lt;<span style="color: #79c0ff;">RightPanelSkeleton</span> /&gt;;</div>
+      <div style="margin-left: 1.5rem;"><span style="color: #ff7b72;">if</span> (error) <span style="color: #ff7b72;">return</span> &lt;<span style="color: #79c0ff;">RightPanelError</span> error={error} /&gt;;</div>
+      <div><br></div>
+      <div style="margin-left: 1.5rem;"><span style="color: #ff7b72;">return</span> (</div>
+      <div style="margin-left: 3rem;">&lt;<span style="color: #d2a8ff;">Suspense</span> fallback={&lt;<span style="color: #79c0ff;">PlayerSkeleton</span> /&gt;}&gt;</div>
+      <div style="margin-left: 4.5rem;">&lt;<span style="color: #d2a8ff;">LazyPlayer.Canvas</span></div>
+      <div style="margin-left: 6rem;">padding={padding}</div>
+      <div style="margin-left: 6rem;">rounding={rounding}</div>
+      <div style="margin-left: 4.5rem;">&gt;</div>
+      <div style="margin-left: 6rem;">&lt;<span style="color: #d2a8ff;">LazyPlayer.Canvas.Background</span> backgroundSrc={bg} /&gt;</div>
+      <div style="margin-left: 6rem;">&lt;<span style="color: #d2a8ff;">LazyPlayer.Canvas.Video</span> videoSrc={videoUrl} /&gt;</div>
+      <div style="margin-left: 6rem;">&lt;<span style="color: #79c0ff;">PlaybackBar</span> /&gt;</div>
+      <div style="margin-left: 4.5rem;">&lt;/<span style="color: #d2a8ff;">LazyPlayer.Canvas</span>&gt;</div>
+      <div style="margin-left: 3rem;">&lt;/<span style="color: #d2a8ff;">Suspense</span>&gt;</div>
+      <div style="margin-left: 1.5rem;">);</div>
+      <div>}</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>LeftPanel — Controls Wiring</h3>
+  <div class="mockup">
+    <div class="mockup-header">ControlsPanel (no props — all from context)</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.8; padding: 1.5rem;">
+      <div style="color: #888;">// No props. No prop drilling. Everything from context.</div>
+      <div><br></div>
+      <div><span style="color: #ff7b72;">function</span> <span style="color: #d2a8ff;">ControlsPanel</span>() {</div>
+      <div style="margin-left: 1.5rem;"><span style="color: #ff7b72;">const</span> { padding, rounding } = <span style="color: #d2a8ff;">useVideoDataState</span>();</div>
+      <div style="margin-left: 1.5rem;"><span style="color: #ff7b72;">const</span> { setPadding, setRounding } = <span style="color: #d2a8ff;">useVideoDataActions</span>();</div>
+      <div><br></div>
+      <div style="margin-left: 1.5rem;"><span style="color: #ff7b72;">return</span> (</div>
+      <div style="margin-left: 3rem;">&lt;<span style="color: #79c0ff;">RangeSlider</span> label=<span style="color: #79c0ff;">"Padding"</span> value={padding} onValueChange={setPadding} /&gt;</div>
+      <div style="margin-left: 3rem;">&lt;<span style="color: #79c0ff;">RangeSlider</span> label=<span style="color: #79c0ff;">"Rounding"</span> value={rounding} onValueChange={setRounding} /&gt;</div>
+      <div style="margin-left: 1.5rem;">);</div>
+      <div>}</div>
+      <div><br></div>
+      <div style="color: #888;">// setPadding/setRounding are stable refs (useCallback)</div>
+      <div style="color: #888;">// ControlsPanel re-renders only when padding/rounding VALUES change</div>
+      <div style="color: #888;">// Other components reading only actions never re-render from state changes</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>Data Flow Diagram</h3>
+  <div class="mockup">
+    <div class="mockup-header">Slider change → Player update (no prop drilling)</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 2.2; padding: 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="background: #79c0ff; color: #0d1117; padding: 2px 8px; border-radius: 4px; font-weight: bold;">1</span>
+        <span>User drags padding slider in <span style="color: #79c0ff;">ControlsPanel</span></span>
+      </div>
+      <div style="margin-left: 2rem; color: #888;">↓</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="background: #d2a8ff; color: #0d1117; padding: 2px 8px; border-radius: 4px; font-weight: bold;">2</span>
+        <span>Calls <span style="color: #d2a8ff;">setPadding(20)</span> from <span style="color: #d2a8ff;">useVideoDataActions</span></span>
+      </div>
+      <div style="margin-left: 2rem; color: #888;">↓</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="background: #7ee787; color: #0d1117; padding: 2px 8px; border-radius: 4px; font-weight: bold;">3</span>
+        <span><span style="color: #7ee787;">VideoDataProvider</span> updates state immediately (optimistic)</span>
+      </div>
+      <div style="margin-left: 2rem; color: #888;">↓</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="background: #ffa657; color: #0d1117; padding: 2px 8px; border-radius: 4px; font-weight: bold;">4</span>
+        <span><span style="color: #ffa657;">VideoDataStateContext</span> value changes → { padding: 20 }</span>
+      </div>
+      <div style="margin-left: 2rem; color: #888;">↓ (context subscription)</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="background: #ff7b72; color: #0d1117; padding: 2px 8px; border-radius: 4px; font-weight: bold;">5</span>
+        <span><span style="color: #ff7b72;">RightPanel</span> re-reads padding → passes as controlled prop to Player.Canvas</span>
+      </div>
+      <div style="margin-left: 2rem; color: #888;">↓</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="background: #f0883e; color: #0d1117; padding: 2px 8px; border-radius: 4px; font-weight: bold;">6</span>
+        <span>Player.Canvas receives new padding → useControlledSync → renders</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>What Changes in Existing Components</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+    <thead>
+      <tr style="border-bottom: 2px solid rgba(255,255,255,0.2);">
+        <th style="text-align: left; padding: 0.75rem;">Component</th>
+        <th style="text-align: left; padding: 0.75rem;">Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <td style="padding: 0.75rem; color: #ff7b72;"><code>src/app/page.tsx</code></td>
+        <td style="padding: 0.75rem;">Replace with redirect to <code>/studio/test-d-123</code></td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <td style="padding: 0.75rem; color: #ffa657;"><code>LeftPanel</code></td>
+        <td style="padding: 0.75rem;">Remove all props — reads from context internally</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <td style="padding: 0.75rem; color: #ffa657;"><code>ControlsPanel</code></td>
+        <td style="padding: 0.75rem;">Remove all props — uses useVideoDataState + useVideoDataActions</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <td style="padding: 0.75rem; color: #ffa657;"><code>RightPanel</code></td>
+        <td style="padding: 0.75rem;">Remove props — reads context, wraps Player in Suspense + lazy</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <td style="padding: 0.75rem; color: #7ee787;"><code>Player.Canvas</code></td>
+        <td style="padding: 0.75rem;"><strong>No changes</strong> — stays dumb/controlled. Receives same props as before.</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <td style="padding: 0.75rem; color: #7ee787;"><code>PlaybackBar</code></td>
+        <td style="padding: 0.75rem;"><strong>No changes</strong> — uses internal Player contexts as before</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <td style="padding: 0.75rem; color: #ff7b72;"><code>feat/context/</code></td>
+        <td style="padding: 0.75rem;">Full rewrite — new contexts, hooks, providers</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -4,6 +4,7 @@ import styles from "../feat.module.css";
 import { useStudioData } from "./use-studio-data";
 import { VideoDataProvider } from "./video-data/provider";
 import { TranscriptProvider } from "./transcript/provider";
+import { PlaybackTimeProvider } from "./playback-time/provider";
 
 interface StudioProviderProps {
   videoId: string;
@@ -34,7 +35,9 @@ export function StudioProvider({ videoId, children }: StudioProviderProps) {
         error={transcriptError}
         isLoading={isLoading}
       >
-        <main className={styles.root}>{children}</main>
+        <PlaybackTimeProvider>
+          <main className={styles.root}>{children}</main>
+        </PlaybackTimeProvider>
       </TranscriptProvider>
     </VideoDataProvider>
   );

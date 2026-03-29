@@ -2,6 +2,7 @@
 
 import { useVideoDataState } from "@/components/feat/context/video-data/use-video-data-state";
 import { PlaybackBar } from "@/components/feat/right-panel/playback-bar";
+import { PlaybackTimeBridge } from "@/components/feat/right-panel/playback-time-bridge";
 import { RightPanelSkeleton } from "@/components/feat/skeletons/right-panel-skeleton";
 import styles from "@/components/feat/right-panel/right-panel.module.css";
 import Player from "@/components/stories/organisms/player";
@@ -25,17 +26,20 @@ export default function RightPanelPage() {
 
   return (
     <section className={styles.root}>
-      <Player.Canvas
-        aria-label="Video player"
-        className={styles.videoArea}
-        padding={padding}
-        rounding={rounding}
-        onError={(e: unknown) => console.error("Player error:", e)}
-      >
-        <Player.Canvas.Background backgroundSrc={bg ?? "/sample-bg.jpg"} />
-        <Player.Canvas.Video videoSrc={videoUrl ?? ""} />
-        <PlaybackBar />
-      </Player.Canvas>
+      <div className={styles.videoWrapper}>
+        <Player.Canvas
+          aria-label="Video player"
+          className={styles.canvasFrame}
+          padding={padding}
+          rounding={rounding}
+          onError={(e: unknown) => console.error("Player error:", e)}
+        >
+          <Player.Canvas.Background backgroundSrc={bg ?? "/sample-bg.jpg"} />
+          <Player.Canvas.Video videoSrc={videoUrl ?? ""} />
+          <PlaybackTimeBridge />
+          <PlaybackBar />
+        </Player.Canvas>
+      </div>
     </section>
   );
 }

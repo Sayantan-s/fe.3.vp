@@ -4,18 +4,21 @@
 .root {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   width: 420px;
   min-width: 420px;
   height: 100%;
-  padding: 32px;
+  padding: 2rem;
+  gap: 24px;
   border-right: 1px solid var(--border-light);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .scriptSection {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .scriptHeader {

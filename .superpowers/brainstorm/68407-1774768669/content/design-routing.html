@@ -1,0 +1,66 @@
+<h2>Design — Section 1: Routing & File Structure</h2>
+<p class="subtitle">New route structure under <code>/studio/[id]</code></p>
+
+<div class="mockup">
+  <div class="mockup-header">File Structure</div>
+  <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.8; padding: 1.5rem;">
+    <div>src/app/</div>
+    <div style="margin-left: 1rem;">├── page.tsx <span style="color: #888;">→ redirect to /studio/test-d-123 (or landing)</span></div>
+    <div style="margin-left: 1rem;">├── layout.tsx <span style="color: #888;">→ root layout (unchanged)</span></div>
+    <div style="margin-left: 1rem;">└── studio/</div>
+    <div style="margin-left: 2.5rem;">└── [id]/</div>
+    <div style="margin-left: 4rem; color: #7ee787;">├── layout.tsx <span style="color: #888;">→ providers + slot composition</span></div>
+    <div style="margin-left: 4rem; color: #7ee787;">├── loading.tsx <span style="color: #888;">→ full-page skeleton fallback</span></div>
+    <div style="margin-left: 4rem; color: #7ee787;">├── error.tsx <span style="color: #888;">→ full-page error boundary</span></div>
+    <div style="margin-left: 4rem; color: #7ee787;">├── page.tsx <span style="color: #888;">→ empty (children slot, can be null)</span></div>
+    <div style="margin-left: 4rem; color: #7ee787;">├── default.tsx <span style="color: #888;">→ fallback for children slot</span></div>
+    <div style="margin-left: 4rem; color: #79c0ff;">├── @leftPanel/</span></div>
+    <div style="margin-left: 5.5rem; color: #79c0ff;">├── page.tsx <span style="color: #888;">→ renders LeftPanel component</span></div>
+    <div style="margin-left: 5.5rem; color: #79c0ff;">├── loading.tsx <span style="color: #888;">→ left panel skeleton</span></div>
+    <div style="margin-left: 5.5rem; color: #79c0ff;">├── error.tsx <span style="color: #888;">→ left panel error</span></div>
+    <div style="margin-left: 5.5rem; color: #79c0ff;">└── default.tsx</div>
+    <div style="margin-left: 4rem; color: #d2a8ff;">├── @rightPanel/</span></div>
+    <div style="margin-left: 5.5rem; color: #d2a8ff;">├── page.tsx <span style="color: #888;">→ renders RightPanel with lazy Player</span></div>
+    <div style="margin-left: 5.5rem; color: #d2a8ff;">├── loading.tsx <span style="color: #888;">→ right panel skeleton</span></div>
+    <div style="margin-left: 5.5rem; color: #d2a8ff;">├── error.tsx <span style="color: #888;">→ right panel error</span></div>
+    <div style="margin-left: 5.5rem; color: #d2a8ff;">└── default.tsx</div>
+    <div style="margin-left: 1rem; color: #888;">└── api/video/[id]/ <span>→ unchanged</span></div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>Layout Composition</h3>
+  <div class="mockup">
+    <div class="mockup-header">studio/[id]/layout.tsx (simplified)</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.7; padding: 1.5rem;">
+      <div style="color: #888;">// Server Component — reads [id] from params</div>
+      <div style="color: #888;">// Wraps slots in client-side providers</div>
+      <div><br></div>
+      <div><span style="color: #ff7b72;">export default</span> <span style="color: #d2a8ff;">function</span> StudioLayout({</div>
+      <div style="margin-left: 1rem;">leftPanel,</div>
+      <div style="margin-left: 1rem;">rightPanel,</div>
+      <div style="margin-left: 1rem;">params,</div>
+      <div>}) {</div>
+      <div style="margin-left: 1rem;"><span style="color: #ff7b72;">const</span> { id } = <span style="color: #ff7b72;">await</span> params;</div>
+      <div style="margin-left: 1rem;"><span style="color: #ff7b72;">return</span> (</div>
+      <div style="margin-left: 2rem;">&lt;<span style="color: #7ee787;">StudioProvider</span> videoId={id}&gt;</div>
+      <div style="margin-left: 3rem;">&lt;<span style="color: #79c0ff;">main</span> className={styles.root}&gt;</div>
+      <div style="margin-left: 4rem;">{leftPanel}</div>
+      <div style="margin-left: 4rem;">{rightPanel}</div>
+      <div style="margin-left: 3rem;">&lt;/<span style="color: #79c0ff;">main</span>&gt;</div>
+      <div style="margin-left: 2rem;">&lt;/<span style="color: #7ee787;">StudioProvider</span>&gt;</div>
+      <div style="margin-left: 1rem;">);</div>
+      <div>}</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>Key Decisions</h3>
+  <ul style="line-height: 2;">
+    <li><strong>Layout is a Server Component</strong> — reads <code>[id]</code> from params, passes to client-side <code>StudioProvider</code></li>
+    <li><strong><code>page.tsx</code> is empty/null</strong> — the <code>children</code> slot has nothing to render; all content lives in the parallel slots</li>
+    <li><strong><code>default.tsx</code> files</strong> required for each slot + children to handle hard navigations</li>
+    <li><strong>Root <code>page.tsx</code></strong> redirects to <code>/studio/test-d-123</code> (or whatever the default ID is)</li>
+  </ul>
+</div>

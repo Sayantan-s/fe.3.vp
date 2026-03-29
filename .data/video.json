@@ -6,7 +6,7 @@
       "config": {
         "bg": 10,
         "padding": 10,
-        "rounding": 10
+        "rounding": 5
       }
     }
   ]

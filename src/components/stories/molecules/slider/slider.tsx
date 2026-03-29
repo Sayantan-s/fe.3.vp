@@ -29,8 +29,8 @@ function SliderLowerBound() {
 }
 
 function SliderUpperBound() {
-  const { max } = useSliderContext();
-  return <span className={styles.bound}>{padBound(max)}</span>;
+  const { value } = useSliderContext();
+  return <span className={styles.bound}>{padBound(value)}</span>;
 }
 
 function SliderTrackRow({ children }: { children: React.ReactNode }) {

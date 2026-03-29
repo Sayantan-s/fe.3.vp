@@ -1,0 +1,88 @@
+/* Transcript panel — word-level highlighting */
+
+.wordContainer {
+  line-height: 1.8;
+  font-family: var(--font-primary);
+  font-size: var(--text-body);
+  user-select: text;
+  cursor: default;
+  padding-top: 8px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.word {
+  transition: color 0.15s ease;
+}
+
+.wordClickable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.wordClickable:hover {
+  background: var(--bg-muted);
+}
+
+.unspoken {
+  color: var(--text-disabled);
+}
+
+.spoken {
+  color: var(--text-primary);
+}
+
+.current {
+  color: var(--text-primary);
+  background: var(--accent-blue-light);
+  border-radius: var(--radius-sm);
+  padding: 1px 2px;
+}
+
+/* Selection popover */
+
+.popover {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  animation: popoverIn 0.15s ease;
+}
+
+.popoverAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-family: var(--font-primary);
+  font-size: var(--text-button);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.popoverAction:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
+}
+
+@keyframes popoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
