@@ -23,14 +23,14 @@
 }
 
 /* --- Sizes --- */
-.sm { width: 28px; height: 28px; }
-.md { width: 36px; height: 36px; }
-.lg { width: 48px; height: 48px; }
+.sm { width: 1.75rem; height: 1.75rem; }
+.md { width: 2.25rem; height: 2.25rem; }
+.lg { width: 3rem; height: 3rem; }
 
 /* --- States --- */
 .hover.primary {
   background-color: var(--play-btn-hover);
-  box-shadow: 0 0 0 4px rgba(91, 108, 252, 0.2);
+  box-shadow: 0 0 0 0.25rem rgba(91, 108, 252, 0.2);
 }
 
 .hover.ghost { background-color: var(--bg-muted); }

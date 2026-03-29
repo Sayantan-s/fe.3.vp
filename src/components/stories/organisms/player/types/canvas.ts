@@ -20,9 +20,13 @@ export type CanvasVideoProps = z.infer<typeof CanvasVideoPropsSchema>;
 
 // --- Component Props ---
 
+export const AspectRatioSchema = z.enum(["horizontal"]);
+export type AspectRatio = z.infer<typeof AspectRatioSchema>;
+
 export interface PlayerCanvasProps {
   "aria-label": string;
   children: React.ReactNode;
+  aspectRatio: AspectRatio;
   className?: string;
   style?: React.CSSProperties;
 

@@ -1,0 +1,22 @@
+/* Right Panel — vertical column: video centered, playback bar at bottom */
+/* Matches design: y0LUc right column (dARH6) */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Stacks canvas + playback bar vertically, centers canvas in available space */
+.videoWrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-card);
+  overflow: hidden;
+}

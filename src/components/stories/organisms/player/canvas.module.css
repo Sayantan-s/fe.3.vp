@@ -1,0 +1,12 @@
+.root {
+  position: relative;
+  overflow: hidden;
+  margin: auto;
+  width: calc(100% - 4rem);
+  max-height: calc(100% - 4rem);
+  border-radius: var(--radius-lg);
+}
+
+.horizontal {
+  aspect-ratio: 16 / 9;
+}

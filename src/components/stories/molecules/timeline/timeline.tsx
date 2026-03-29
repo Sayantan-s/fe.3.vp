@@ -1,5 +1,8 @@
+"use client";
+
 import * as Slider from "@radix-ui/react-slider";
 import { cva, type VariantProps } from "class-variance-authority";
+import { useDebouncedSlider } from "@/hooks/use-debounced-slider";
 import styles from "./timeline.module.css";
 
 const timelineVariants = cva(styles.root, {
@@ -21,6 +24,7 @@ export interface TimelineProps extends VariantProps<typeof timelineVariants> {
   buffered?: number;
   /** Interval between lap markers in seconds. Default: 15 */
   lapInterval?: number;
+  debounceMs?: number;
   onSeek?: (time: number) => void;
   className?: string;
 }
@@ -50,9 +54,16 @@ export function Timeline({
   duration,
   buffered = 0,
   lapInterval = 15,
+  debounceMs,
   onSeek,
   className,
 }: TimelineProps) {
+  const [displayTime, handleSeek] = useDebouncedSlider(
+    currentTime,
+    onSeek,
+    debounceMs,
+  );
+
   const bufferPct = duration > 0 ? (buffered / duration) * 100 : 0;
   const laps = generateLaps(duration, lapInterval);
 
@@ -67,11 +78,11 @@ export function Timeline({
         )}
         <Slider.Root
           className={styles.slider}
-          value={[currentTime]}
+          value={[displayTime]}
           min={0}
           max={duration || 1}
           step={0.1}
-          onValueChange={([v]) => onSeek?.(v)}
+          onValueChange={([v]) => handleSeek(v)}
           disabled={state === "disabled"}
           aria-label="Seek timeline"
         >

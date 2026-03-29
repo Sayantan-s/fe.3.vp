@@ -21,11 +21,16 @@ export {
 
 // Canvas component props
 export type {
+  AspectRatio,
   PlayerCanvasProps,
   CanvasVideoProps,
   CanvasBackgroundProps,
 } from "./canvas";
-export { CanvasBackgroundPropsSchema, CanvasVideoPropsSchema } from "./canvas";
+export {
+  AspectRatioSchema,
+  CanvasBackgroundPropsSchema,
+  CanvasVideoPropsSchema,
+} from "./canvas";
 
 // Context types
 export type {

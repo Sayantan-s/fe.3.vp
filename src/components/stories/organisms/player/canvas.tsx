@@ -16,11 +16,13 @@ import { useControlledSync } from "./hooks/use-controlled-sync";
 import { SR_ONLY } from "./utils/sr-only";
 import type { PlayerCanvasProps } from "./types";
 import type { MeshEntry } from "./utils/mesh-layout";
+import css from "./canvas.module.css";
 
 export function PlayerCanvas(props: PlayerCanvasProps) {
   const {
     "aria-label": ariaLabel,
     children,
+    aspectRatio,
     className,
     style,
     playing,
@@ -118,8 +120,8 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
               ref={containerRef}
               role="group"
               aria-label={ariaLabel}
-              className={className}
-              style={{ position: "relative", ...style }}
+              className={`${css.root} ${css[aspectRatio]}${className ? ` ${className}` : ""}`}
+              style={style}
             >
               <canvas
                 ref={canvasRef}

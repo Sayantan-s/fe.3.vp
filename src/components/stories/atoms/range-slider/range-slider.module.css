@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  height: 20px;
+  height: 1.25rem;
   touch-action: none;
   user-select: none;
 }
@@ -32,19 +32,19 @@
   height: var(--slider-thumb-size);
   border-radius: 50%;
   background: white;
-  border: 2px solid var(--slider-thumb);
+  border: 0.125rem solid var(--slider-thumb);
   outline: none;
   transition: transform 150ms, box-shadow 150ms;
 }
 
 .thumb:focus-visible {
-  box-shadow: 0 0 0 3px rgba(74, 124, 252, 0.25);
+  box-shadow: 0 0 0 0.1875rem rgba(74, 124, 252, 0.25);
 }
 
 /* --- States --- */
 .hover .thumb {
   transform: scale(1.25);
-  box-shadow: 0 0 0 4px rgba(74, 124, 252, 0.15);
+  box-shadow: 0 0 0 0.25rem rgba(74, 124, 252, 0.15);
 }
 
 .dragging .thumb {

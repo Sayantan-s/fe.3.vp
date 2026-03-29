@@ -1,4 +1,4 @@
-import { StudioProvider } from "@/components/feat/context";
+import { StudioProvider } from "@/components/feat/studio/context";
 
 export default async function StudioLayout({
   leftPanel,

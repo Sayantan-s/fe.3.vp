@@ -12,6 +12,7 @@ const meta = {
   // Individual stories use render() and supply their own JSX.
   args: {
     "aria-label": "Demo player",
+    aspectRatio: "horizontal",
     children: null,
   },
 } satisfies Meta<typeof Player.Canvas>;
@@ -98,6 +99,7 @@ export const Uncontrolled: Story = {
   render: () => (
     <Player.Canvas
       aria-label="Uncontrolled demo player"
+      aspectRatio="horizontal"
       style={{ width: "100%", height: "80vh" }}
     >
       <Player.Canvas.Background backgroundSrc="/sample-bg.jpg" />
@@ -111,6 +113,7 @@ export const VideoOnly: Story = {
   render: () => (
     <Player.Canvas
       aria-label="Video only player"
+      aspectRatio="horizontal"
       style={{ width: "100%", height: "80vh" }}
     >
       <Player.Canvas.Video videoSrc="/video.mp4" />
@@ -132,6 +135,7 @@ export const FullyControlled: Story = {
       <div>
         <Player.Canvas
           aria-label="Controlled demo player"
+          aspectRatio="horizontal"
           style={{ width: "100%", height: "60vh" }}
           playing={isPlaying}
           currentTime={seekPos}

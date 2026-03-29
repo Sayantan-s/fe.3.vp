@@ -9,7 +9,8 @@ import styles from "./slider.module.css";
 
 function useSliderContext(): SliderContextValue {
   const ctx = use(SliderContext);
-  if (!ctx) throw new Error("Slider compound components must be used within <Slider>");
+  if (!ctx)
+    throw new Error("Slider compound components must be used within <Slider>");
   return ctx;
 }
 
@@ -20,7 +21,7 @@ function padBound(value: number): string {
 // --- Sub-components ---
 
 function SliderLabel({ children }: { children: React.ReactNode }) {
-  return <span className={styles.label}>{children}</span>;
+  return <div className={styles.label}>{children}</div>;
 }
 
 function SliderLowerBound() {
@@ -47,6 +48,7 @@ function SliderTrack() {
         min={min}
         max={max}
         step={step}
+        debounceMs={500}
         onValueChange={onChange}
       />
     </div>

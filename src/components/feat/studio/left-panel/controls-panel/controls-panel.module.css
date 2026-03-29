@@ -1,0 +1,7 @@
+/* Controls Panel — layout only, slider styles live in Slider molecule */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}

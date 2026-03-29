@@ -7,7 +7,7 @@ import styles from "./right-panel.module.css";
 import Player from "@/components/stories/organisms/player";
 import { BG_OPTIONS } from "@/components/stories/molecules/background-swatch/bg-options";
 
-export default function RightPanelPage() {
+export default function RightPanel() {
   const { videoUrl, bg, padding, rounding, isLoading, error } =
     useVideoDataState();
 
