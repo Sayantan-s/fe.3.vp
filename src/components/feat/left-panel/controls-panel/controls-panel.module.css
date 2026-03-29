@@ -1,36 +1,7 @@
-/* Controls Panel — Padding + Rounding sliders */
-/* Specs: gap 24px between controls, gap 12px within each */
+/* Controls Panel — layout only, slider styles live in Slider molecule */
 
 .root {
   display: flex;
   flex-direction: column;
   gap: 24px;
-}
-
-.control {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.label {
-  font-family: var(--font-primary);
-  font-size: var(--text-body);
-  font-weight: var(--weight-medium);
-  color: var(--text-primary);
-}
-
-.sliderRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.bound {
-  font-family: var(--font-primary);
-  font-size: var(--text-button);
-  font-weight: var(--weight-regular);
-  color: var(--text-secondary);
-  min-width: 20px;
-  text-align: center;
 }

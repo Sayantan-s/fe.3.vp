@@ -1,52 +1,34 @@
-import { RangeSlider } from "@/components/stories/atoms/range-slider/range-slider";
+// src/components/feat/left-panel/controls-panel/index.tsx
+"use client";
+
+import { Slider } from "@/components/stories/molecules/slider/slider";
+import { useVideoDataState } from "@/components/feat/context/video-data/use-video-data-state";
+import { useVideoDataActions } from "@/components/feat/context/video-data/use-video-data-actions";
 import styles from "./controls-panel.module.css";
 
-export interface ControlsPanelProps {
-  padding: number;
-  rounding: number;
-  onPaddingChange: (value: number) => void;
-  onRoundingChange: (value: number) => void;
-}
+export function ControlsPanel() {
+  const { padding, rounding } = useVideoDataState();
+  const { setPadding, setRounding } = useVideoDataActions();
 
-export function ControlsPanel({
-  padding,
-  rounding,
-  onPaddingChange,
-  onRoundingChange,
-}: ControlsPanelProps) {
   return (
     <div className={styles.root}>
-      <div className={styles.control}>
-        <span className={styles.label}>Padding</span>
-        <div className={styles.sliderRow}>
-          <span className={styles.bound}>00</span>
-          <RangeSlider
-            label="Padding"
-            value={padding}
-            min={0}
-            max={32}
-            step={1}
-            onValueChange={onPaddingChange}
-          />
-          <span className={styles.bound}>32</span>
-        </div>
-      </div>
+      <Slider value={padding} onChange={setPadding} min={0} max={32}>
+        <Slider.Label>Padding</Slider.Label>
+        <Slider.TrackRow>
+          <Slider.LowerBound />
+          <Slider.Track />
+          <Slider.UpperBound />
+        </Slider.TrackRow>
+      </Slider>
 
-      <div className={styles.control}>
-        <span className={styles.label}>Rounding</span>
-        <div className={styles.sliderRow}>
-          <span className={styles.bound}>00</span>
-          <RangeSlider
-            label="Rounding"
-            value={rounding}
-            min={0}
-            max={32}
-            step={1}
-            onValueChange={onRoundingChange}
-          />
-          <span className={styles.bound}>32</span>
-        </div>
-      </div>
+      <Slider value={rounding} onChange={setRounding} min={0} max={32}>
+        <Slider.Label>Rounding</Slider.Label>
+        <Slider.TrackRow>
+          <Slider.LowerBound />
+          <Slider.Track />
+          <Slider.UpperBound />
+        </Slider.TrackRow>
+      </Slider>
     </div>
   );
 }
