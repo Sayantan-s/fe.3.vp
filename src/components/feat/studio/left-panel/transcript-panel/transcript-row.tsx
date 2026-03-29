@@ -13,6 +13,42 @@ interface TranscriptRowProps {
   onSeek: (time: number) => void;
 }
 
+function rowNeedsRerender(
+  prev: TranscriptRowProps,
+  next: TranscriptRowProps,
+): boolean {
+  if (
+    prev.row !== next.row ||
+    prev.words !== next.words ||
+    prev.skippedIndices !== next.skippedIndices ||
+    prev.onSeek !== next.onSeek
+  ) {
+    return false;
+  }
+
+  const { startIndex, endIndex } = next.row;
+
+  // Re-render if currentWordIndex entered or left this row
+  const prevInRow =
+    prev.currentWordIndex >= startIndex && prev.currentWordIndex <= endIndex;
+  const nextInRow =
+    next.currentWordIndex >= startIndex && next.currentWordIndex <= endIndex;
+  if (prevInRow || nextInRow) return false;
+
+  // Re-render if isSpoken boundary crossed this row
+  // (isSpoken = i <= currentWordIndex, so the boundary is at currentWordIndex)
+  const prevBoundary = prev.currentWordIndex;
+  const nextBoundary = next.currentWordIndex;
+  if (prevBoundary !== nextBoundary) {
+    // Only re-render if the spoken boundary moved across this row's range
+    const minBoundary = Math.min(prevBoundary, nextBoundary);
+    const maxBoundary = Math.max(prevBoundary, nextBoundary);
+    if (minBoundary <= endIndex && maxBoundary >= startIndex) return false;
+  }
+
+  return true;
+}
+
 export const TranscriptRow = memo(function TranscriptRow({
   row,
   words,
@@ -40,4 +76,4 @@ export const TranscriptRow = memo(function TranscriptRow({
   }
 
   return <>{spans}</>;
-});
+}, rowNeedsRerender);

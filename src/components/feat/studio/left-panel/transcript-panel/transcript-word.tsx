@@ -10,7 +10,6 @@ interface TranscriptWordProps {
   isSkipped: boolean;
   isCurrent: boolean;
   isSpoken: boolean;
-  ref?: React.Ref<HTMLSpanElement>;
   onSeek: (time: number) => void;
 }
 
@@ -20,7 +19,6 @@ export const TranscriptWord = memo(function TranscriptWord({
   isSkipped,
   isCurrent,
   isSpoken,
-  ref,
   onSeek,
 }: TranscriptWordProps) {
   const isClickable = word.type === "word" && !isSkipped;
@@ -43,7 +41,6 @@ export const TranscriptWord = memo(function TranscriptWord({
     // biome-ignore lint/a11y/noStaticElementInteractions: word span with seek handler
     // biome-ignore lint/a11y/useKeyWithClickEvents: word span with seek handler
     <span
-      ref={ref}
       data-index={index}
       className={className}
       onClick={isClickable ? () => onSeek(word.start) : undefined}

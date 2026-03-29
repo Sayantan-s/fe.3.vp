@@ -3,7 +3,7 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Copy, SkipForward, Undo2 } from "lucide-react";
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import { usePlaybackTimeStore } from "@/components/feat/studio/context/playback-time/use-playback-time";
 import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { useCurrentWordIndex } from "./hooks/use-current-word-index";
@@ -52,13 +52,15 @@ export function TranscriptPanel() {
 
   const currentRowIndex = findRowForWord(rows, currentWordIndex);
 
+  const scrollTo = useCallback(() => {
+    if (currentRowIndex >= 0) {
+      virtualizer.scrollToIndex(currentRowIndex, { align: "center" });
+    }
+  }, [currentRowIndex, virtualizer]);
+
   const { onScroll } = useAutoScroll<HTMLSpanElement>({
     deps: [currentRowIndex],
-    scrollTo: () => {
-      if (currentRowIndex >= 0) {
-        virtualizer.scrollToIndex(currentRowIndex, { align: "center" });
-      }
-    },
+    scrollTo,
   });
 
   useSkipAutoSeek(words, skippedIndices, store, wordIndexStore);
@@ -69,8 +71,6 @@ export function TranscriptPanel() {
     unskipRange: actions.unskipRange,
   });
 
-  if (isLoading)
-    return <TranscriptStatus message="Loading transcript..." type="loading" />;
   if (error || !words)
     return <TranscriptStatus message={error ?? "No transcript available."} />;
 
@@ -78,12 +78,13 @@ export function TranscriptPanel() {
     <div className={styles.scriptSection}>
       <div className={styles.scriptHeader}>
         <span className={styles.scriptLabel}>Transcript</span>
-        {skippedIndices.size > 0 && (
-          <span className={styles.skipBadge}>
-            {skippedIndices.size} word{skippedIndices.size !== 1 ? "s" : ""}{" "}
-            skipped
-          </span>
-        )}
+        <span
+          data-hide={skippedIndices.size === 0}
+          className={styles.skipBadge}
+        >
+          {skippedIndices.size} word{skippedIndices.size !== 1 ? "s" : ""}{" "}
+          skipped
+        </span>
       </div>
       <Popover.Root
         open={popover.popoverOpen}
