@@ -1,33 +1,41 @@
-"/video/";
+"use client";
 
-import { createContext, useState } from "react";
 import styles from "../feat.module.css";
+import { useStudioData } from "./use-studio-data";
+import { VideoDataProvider } from "./video-data/provider";
+import { TranscriptProvider } from "./transcript/provider";
 
-// api -> /video/{id}
-const MOCK = {
-  id: "test-d-123",
-  videoUrl: "/video.mp4",
-  config: {
-    bg: 10,
-    padding: 10,
-    rounding: 10,
-  },
-};
-
-// api -> /video/{id}/transcript
-// return the transcript from .data/transcript.json
-
-export const PlayerStudioContext = createContext(null);
-
-export const PlayerStudioProvider = ({
-  children,
-}: {
+interface StudioProviderProps {
+  videoId: string;
   children: React.ReactNode;
-}) => {
-  const [videoData, setVideoData] = useState(MOCK);
+}
+
+export function StudioProvider({ videoId, children }: StudioProviderProps) {
+  const { videoData, transcriptData, videoError, transcriptError, isLoading } =
+    useStudioData(videoId);
+
   return (
-    <PlayerStudioContext.Provider value={null}>
-      <main className={styles.root}>{children}</main>
-    </PlayerStudioContext.Provider>
+    <VideoDataProvider
+      initialData={
+        videoData
+          ? {
+              videoUrl: videoData.videoUrl,
+              bg: "/sample-bg.jpg",
+              padding: videoData.config.padding,
+              rounding: videoData.config.rounding,
+            }
+          : null
+      }
+      error={videoError}
+      isLoading={isLoading}
+    >
+      <TranscriptProvider
+        initialData={transcriptData}
+        error={transcriptError}
+        isLoading={isLoading}
+      >
+        <main className={styles.root}>{children}</main>
+      </TranscriptProvider>
+    </VideoDataProvider>
   );
-};
+}
