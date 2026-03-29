@@ -7,6 +7,7 @@ import { Activity } from "react";
 
 export function CanvasBackground({
   backgroundSrc,
+  className,
   "aria-label": ariaLabel,
 }: CanvasBackgroundProps) {
   const internal = usePlayerInternalCtx();
@@ -15,7 +16,7 @@ export function CanvasBackground({
 
   return (
     <Activity mode={ariaLabel ? "visible" : "hidden"}>
-      <div role="img" aria-label={ariaLabel} />
+      <div role="img" aria-label={ariaLabel} className={className} />
     </Activity>
   );
 }

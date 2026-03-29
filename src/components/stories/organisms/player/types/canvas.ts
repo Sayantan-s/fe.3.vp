@@ -5,6 +5,7 @@ import { z } from "zod";
 export const CanvasBackgroundPropsSchema = z.object({
   backgroundSrc: z.string().min(1),
   "aria-label": z.string().optional(),
+  className: z.string().optional(),
 });
 
 export const CanvasVideoPropsSchema = z.object({

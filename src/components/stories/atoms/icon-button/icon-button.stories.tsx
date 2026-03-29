@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Play, Pause, RotateCcw, Sparkles } from "lucide-react";
-import { IconButton } from "./icon-button";
+import { IconButton } from ".";
 
 const meta = {
   title: "Atoms/IconButton",
@@ -9,7 +9,10 @@ const meta = {
   argTypes: {
     variant: { control: "select", options: ["primary", "ghost"] },
     size: { control: "select", options: ["sm", "md", "lg"] },
-    state: { control: "select", options: ["idle", "hover", "active", "disabled"] },
+    state: {
+      control: "select",
+      options: ["idle", "hover", "active", "disabled"],
+    },
   },
 } satisfies Meta<typeof IconButton>;
 

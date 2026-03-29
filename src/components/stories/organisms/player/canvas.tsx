@@ -126,13 +126,8 @@ export function PlayerCanvas(props: PlayerCanvasProps) {
                 aria-hidden="true"
                 style={{ display: "block", width: "100%", height: "100%" }}
               />
-              <div style={SR_ONLY}>
-                <div role="status" aria-live="polite" aria-atomic="true">
-                  {announcement}
-                </div>
-              </div>
-              {children}
             </div>
+            {children}
           </AppearanceContext>
         </PlaybackContext>
       </PlayerInternalContext>

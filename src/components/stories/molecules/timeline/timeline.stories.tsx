@@ -29,7 +29,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 export const Hover: Story = { args: { state: "hover" } };
-export const Complete: Story = { args: { state: "complete", currentTime: 165 } };
+export const Complete: Story = {
+  args: { state: "complete", currentTime: 165 },
+};
 export const Buffering: Story = { args: { state: "buffering", buffered: 60 } };
 export const Disabled: Story = { args: { state: "disabled" } };
 export const FiveSecondLaps: Story = { args: { lapInterval: 5, duration: 30 } };

@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
-import { Player, usePlayback, useAppearance } from "../player/index";
+import Player, { usePlayback, useAppearance } from "../player/index";
 
 const meta = {
-  title: "Components/Player",
+  title: "Organisms/Player",
   component: Player.Canvas,
   parameters: {
     layout: "fullscreen",

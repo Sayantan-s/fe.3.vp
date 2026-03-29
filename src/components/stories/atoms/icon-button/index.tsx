@@ -24,7 +24,8 @@ const iconButtonVariants = cva(styles.base, {
 });
 
 export interface IconButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof iconButtonVariants> {
   icon: LucideIcon;
   iconSize?: number;

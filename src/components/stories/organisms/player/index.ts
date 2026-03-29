@@ -12,7 +12,7 @@ const Canvas = Object.assign(PlayerCanvas, {
   Error: CanvasError,
 });
 
-export const Player = { Canvas };
+const Player = { Canvas };
 
 // Hooks
 export { usePlayback } from "./context/use-playback";
@@ -36,4 +36,7 @@ export type {
   CanvasBackgroundProps,
   CanvasVideoProps,
 } from "./types";
+
 export type { CanvasErrorProps } from "./canvas-error";
+
+export default Player;
