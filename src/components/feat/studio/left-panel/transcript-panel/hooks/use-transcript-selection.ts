@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { findClosestWordSpan } from "../utils/find-closest-word-span";
 
 interface TranscriptSelection {
@@ -17,22 +17,23 @@ const EMPTY_SELECTION: TranscriptSelection = {
   anchorRect: null,
 };
 
+const DEBOUNCE_MS = 50;
+
 /**
  * Tracks native text selection within a container element.
  * Maps the DOM selection back to word indices via data-index attributes.
+ * Debounced at 50ms to reduce DOM walks during drag selection.
  */
 export function useTranscriptSelection(
   containerRef: React.RefObject<HTMLDivElement | null>,
 ): TranscriptSelection {
-  const [selection, setSelection] = useState<TranscriptSelection>(EMPTY_SELECTION);
+  const [selection, setSelection] =
+    useState<TranscriptSelection>(EMPTY_SELECTION);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSelectionChange = useCallback(() => {
+  const processSelection = useCallback(() => {
     const domSelection = document.getSelection();
-    if (
-      !domSelection ||
-      domSelection.isCollapsed ||
-      !containerRef.current
-    ) {
+    if (!domSelection || domSelection.isCollapsed || !containerRef.current) {
       setSelection(EMPTY_SELECTION);
       return;
     }
@@ -65,11 +66,17 @@ export function useTranscriptSelection(
   }, [containerRef]);
 
   useEffect(() => {
+    const handleSelectionChange = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(processSelection, DEBOUNCE_MS);
+    };
+
     document.addEventListener("selectionchange", handleSelectionChange);
     return () => {
       document.removeEventListener("selectionchange", handleSelectionChange);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [handleSelectionChange]);
+  }, [processSelection]);
 
   return selection;
 }
