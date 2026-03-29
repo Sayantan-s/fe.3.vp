@@ -84,13 +84,18 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.125rem 0.5rem;
+  padding: 0.3rem 0.5rem;
   font-family: var(--font-primary);
   font-size: var(--text-caption);
   color: var(--text-secondary);
   background: var(--bg-muted);
   border-radius: var(--radius-sm);
   margin-bottom: 0.5rem;
+  visibility: visible;
+}
+
+.skipBadge[data-hide="true"] {
+  visibility: hidden;
 }
 
 /* Selection popover */

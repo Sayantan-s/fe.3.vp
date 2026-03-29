@@ -21,11 +21,14 @@ export const TranscriptWord = memo(function TranscriptWord({
   isSpoken,
   onSeek,
 }: TranscriptWordProps) {
-  const isClickable = word.type === "word" && !isSkipped;
+  const isWord = word.type === "word";
+  const isClickable = isWord && !isSkipped;
 
   let className = styles.word;
   if (isSkipped) {
     className += ` ${styles.skipped}`;
+  } else if (!isWord) {
+    // Spacing tokens get no highlight
   } else if (isCurrent) {
     className += ` ${styles.current}`;
   } else if (isSpoken) {
