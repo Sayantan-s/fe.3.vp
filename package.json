@@ -49,5 +49,8 @@
     "typescript": "^5",
     "vite": "^8.0.2",
     "vitest": "^4.1.1"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,css,json,md}": "biome check --write --no-errors-on-unmatched"
   }
 }
