@@ -1,0 +1,115 @@
+@keyframes shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.pulse {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Left panel skeleton */
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 420px;
+  min-width: 420px;
+  height: 100%;
+  padding: 32px;
+  border-right: 1px solid var(--border-light);
+}
+
+.textLine {
+  height: 16px;
+  border-radius: 8px;
+  background: var(--border-light);
+}
+
+.textLines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.controlSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sliderLabel {
+  height: 12px;
+  width: 60px;
+  border-radius: 4px;
+  background: var(--border-light);
+}
+
+.sliderTrack {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border-light);
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Right panel skeleton */
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  flex: 0.5;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.playerArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--border-light);
+  margin: 1rem;
+}
+
+.playButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.playbackBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1rem;
+}
+
+.playbackBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--border-light);
+}
+
+.timeDisplay {
+  height: 12px;
+  width: 80px;
+  border-radius: 4px;
+  background: var(--border-light);
+}
+
+.timeline {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border-light);
+}
