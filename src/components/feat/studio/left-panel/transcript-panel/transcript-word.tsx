@@ -1,7 +1,8 @@
 "use client";
 
-import type { Word } from "./utils/word-schema";
+import { memo } from "react";
 import styles from "./transcript-panel.module.css";
+import type { Word } from "./utils/word-schema";
 
 interface TranscriptWordProps {
   word: Word;
@@ -13,7 +14,7 @@ interface TranscriptWordProps {
   onSeek: (time: number) => void;
 }
 
-export function TranscriptWord({
+export const TranscriptWord = memo(function TranscriptWord({
   word,
   index,
   isSkipped,
@@ -39,8 +40,8 @@ export function TranscriptWord({
   }
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+    // biome-ignore lint/a11y/noStaticElementInteractions: word span with seek handler
+    // biome-ignore lint/a11y/useKeyWithClickEvents: word span with seek handler
     <span
       ref={ref}
       data-index={index}
@@ -50,4 +51,4 @@ export function TranscriptWord({
       {word.text}
     </span>
   );
-}
+});
