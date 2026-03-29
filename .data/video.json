@@ -1,0 +1,13 @@
+{
+  "db": [
+    {
+      "id": "test-d-123",
+      "videoUrl": "/video.mp4",
+      "config": {
+        "bg": 10,
+        "padding": 10,
+        "rounding": 10
+      }
+    }
+  ]
+}
