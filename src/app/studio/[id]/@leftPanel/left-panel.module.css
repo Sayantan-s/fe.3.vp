@@ -4,41 +4,11 @@
 .root {
   display: flex;
   flex-direction: column;
-  width: 26.25rem;
-  min-width: 26.25rem;
+  width: 30rem;
+  min-width: 30rem;
   height: 100%;
   padding: 2rem;
   gap: 1.5rem;
   border-right: 0.0625rem solid var(--border-light);
   overflow: hidden;
-}
-
-.scriptSection {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.scriptHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 1rem;
-}
-
-.scriptLabel {
-  font-family: var(--font-primary);
-  font-size: var(--text-subtitle);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-}
-
-.scriptPlaceholder {
-  padding-top: 1rem;
-  font-family: var(--font-primary);
-  font-size: var(--text-body);
-  color: var(--text-tertiary);
-  line-height: 1.6;
 }

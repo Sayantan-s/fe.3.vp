@@ -14,7 +14,7 @@ import { TranscriptStatus } from "./transcript-status";
 import styles from "./transcript-panel.module.css";
 
 export function TranscriptPanel() {
-  const { words, isLoading, error, skippedIndices } = useTranscriptState();
+  const { words, error, skippedIndices } = useTranscriptState();
   const actions = useTranscriptActions();
   const currentWordIndex = useCurrentWordIndex();
   const store = usePlaybackTimeStore();
@@ -30,7 +30,6 @@ export function TranscriptPanel() {
     unskipRange: actions.unskipRange,
   });
 
-  if (isLoading) return <TranscriptStatus message="Loading transcript..." />;
   if (error || !words) return <TranscriptStatus message={error ?? "No transcript available."} />;
 
   return (

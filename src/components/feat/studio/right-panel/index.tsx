@@ -3,6 +3,7 @@
 import { useVideoDataState } from "@/components/feat/studio/context/video-data/use-video-data-state";
 import { PlaybackBar } from "@/components/feat/studio/right-panel/playback-bar";
 import { RightPanelSkeleton } from "@/components/feat/studio/skeletons/right-panel-skeleton";
+import skeletonStyles from "@/components/feat/studio/skeletons/skeleton.module.css";
 import styles from "./right-panel.module.css";
 import Player from "@/components/stories/organisms/player";
 import { BG_OPTIONS } from "@/components/stories/molecules/background-swatch/bg-options";
@@ -16,11 +17,9 @@ export default function RightPanel() {
   if (error) {
     return (
       <section className={styles.root}>
-        <div style={{ padding: 32, textAlign: "center" }}>
-          <p>Failed to load video</p>
-          <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-            {error}
-          </p>
+        <div className={skeletonStyles.errorContainer}>
+          <p className={skeletonStyles.errorTitle}>Failed to load video</p>
+          <p className={skeletonStyles.errorDetail}>{error}</p>
         </div>
       </section>
     );

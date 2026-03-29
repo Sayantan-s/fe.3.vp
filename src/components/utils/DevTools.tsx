@@ -6,12 +6,12 @@ import { Fragment } from "react";
 export const DevTools = () => {
   return (
     <Fragment>
-      <Script
+      {/* <Script
         src="//unpkg.com/react-scan/dist/auto.global.js"
         crossOrigin="anonymous"
         strategy="beforeInteractive"
         defer
-      />
+      /> */}
     </Fragment>
   );
 };

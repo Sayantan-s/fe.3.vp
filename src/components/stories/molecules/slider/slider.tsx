@@ -31,7 +31,7 @@ function SliderLowerBound() {
 
 function SliderUpperBound() {
   const { value } = useSliderContext();
-  return <span className={styles.bound}>{padBound(value)}</span>;
+  return <span className={styles.upperbound}>{padBound(value)}</span>;
 }
 
 function SliderTrackRow({ children }: { children: React.ReactNode }) {

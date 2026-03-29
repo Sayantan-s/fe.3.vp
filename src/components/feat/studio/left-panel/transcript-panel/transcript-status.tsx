@@ -1,16 +1,26 @@
-import styles from "./transcript-panel.module.css";
+import transcriptStyles from "./transcript-panel.module.css";
+import skeletonStyles from "@/components/feat/studio/skeletons/skeleton.module.css";
 
 interface TranscriptStatusProps {
   message: string;
+  type?: "loading" | "error";
 }
 
-export function TranscriptStatus({ message }: TranscriptStatusProps) {
+/**
+ * Fills the same space as a loaded TranscriptPanel (scriptSection layout)
+ * to prevent cumulative layout shift.
+ */
+export function TranscriptStatus({ message, type = "error" }: TranscriptStatusProps) {
   return (
-    <div className={styles.scriptSection}>
-      <div className={styles.scriptHeader}>
-        <span className={styles.scriptLabel}>Transcript</span>
+    <div className={transcriptStyles.scriptSection}>
+      <div className={transcriptStyles.scriptHeader}>
+        <span className={transcriptStyles.scriptLabel}>Transcript</span>
       </div>
-      <p className={styles.scriptPlaceholder}>{message}</p>
+      <div className={skeletonStyles.errorContainer}>
+        <p className={type === "error" ? skeletonStyles.errorTitle : skeletonStyles.errorDetail}>
+          {message}
+        </p>
+      </div>
     </div>
   );
 }

@@ -28,6 +28,21 @@
   text-align: center;
 }
 
+.upperbound {
+  width: 2rem;
+  aspect-ratio: 1 / 1;
+  background-color: var(--border-light);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-primary);
+  font-size: var(--text-button);
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+  min-width: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .track {
   flex: 1;
 }

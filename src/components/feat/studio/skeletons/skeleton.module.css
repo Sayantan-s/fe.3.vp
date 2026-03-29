@@ -1,82 +1,182 @@
 @keyframes shimmer {
-  0% { opacity: 0.5; }
-  50% { opacity: 1; }
-  100% { opacity: 0.5; }
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
 }
 
 .pulse {
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Left panel skeleton */
+.bone {
+  border-radius: 0.5rem;
+  background: var(--border-light);
+}
+
+/* ------------------------------------------------------------------ */
+/* Left panel skeleton — matches left-panel.module.css (.root)        */
+/* Width: 30rem, padding: 2rem, gap: 1.5rem, right border            */
+/* ------------------------------------------------------------------ */
+
 .leftPanel {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  width: 26.25rem;
-  min-width: 26.25rem;
+  width: 30rem;
+  min-width: 30rem;
   height: 100%;
   padding: 2rem;
+  gap: 1.5rem;
   border-right: 0.0625rem solid var(--border-light);
+  overflow: hidden;
 }
 
-.textLine {
+/* --- Transcript skeleton (matches .scriptSection) --- */
+
+.transcriptSection {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Header — matches .scriptHeader + .scriptLabel */
+.transcriptHeader {
+  display: flex;
+  align-items: center;
+  padding-bottom: 1rem;
+}
+
+.transcriptLabel {
+  height: 1.125rem;
+  width: 6rem;
+  border-radius: 0.25rem;
+  background: var(--border-light);
+}
+
+/* Word lines — matches .wordContainer (line-height 1.8, font-size body) */
+.wordLines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-top: 0.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.wordLine {
   height: 1rem;
   border-radius: 0.5rem;
   background: var(--border-light);
 }
 
-.textLines {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
+/* --- Controls skeleton (matches .controls .root gap 1.5rem) --- */
 
-.controlSkeleton {
+.controlsSection {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.sliderLabel {
-  height: 0.75rem;
-  width: 3.75rem;
+/* BgSwatch skeleton — matches background-swatch .root (col, gap 0.5rem) */
+.swatchGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Label — matches .label (font-size body, margin-bottom 0.5rem) */
+.swatchLabel {
+  height: 1rem;
+  width: 10rem;
   border-radius: 0.25rem;
   background: var(--border-light);
+  margin-bottom: 0.5rem;
 }
 
-.sliderTrack {
-  height: 0.375rem;
-  border-radius: 999px;
+/* Grid — matches .grid (flex-wrap, gap 0.5rem) */
+.swatchGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Item — matches .item (3rem square, rounded 0.5rem) */
+.swatchItem {
+  width: 3rem;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.5rem;
   background: var(--border-light);
 }
 
-.controlGroup {
+/* Slider skeleton — matches slider .root (col, gap 0.75rem) */
+.sliderGroup {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-/* Right panel skeleton */
+/* Label — matches slider .label */
+.sliderLabel {
+  height: 1rem;
+  width: 4rem;
+  border-radius: 0.25rem;
+  background: var(--border-light);
+}
+
+/* TrackRow — matches .trackRow (flex, gap 0.75rem, center) */
+.sliderTrackRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Bound — matches .bound (min-width 1.25rem) */
+.sliderBound {
+  width: 1.25rem;
+  height: 0.875rem;
+  border-radius: 0.25rem;
+  background: var(--border-light);
+}
+
+/* Track — matches range-slider .root (height 1.25rem) > .track (height 0.25rem) */
+.sliderTrack {
+  flex: 1;
+  height: var(--slider-track-height);
+  border-radius: 999px;
+  background: var(--border-light);
+}
+
+/* ------------------------------------------------------------------ */
+/* Right panel skeleton — matches right-panel.module.css (.root)      */
+/* flex: 1, min-width: 0, column                                     */
+/* ------------------------------------------------------------------ */
+
 .rightPanel {
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 100%;
-  flex: 0.5;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
+/* Player area — matches .videoWrapper */
 .playerArea {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
   background: var(--border-light);
-  margin: 1rem;
+  overflow: hidden;
 }
 
 .playButton {
@@ -86,11 +186,22 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Playback bar — matches playback-bar .root (col, gap 0.75rem, padding 2rem, border-top) */
 .playbackBar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.75rem;
-  padding: 1rem;
+  width: 100%;
+  padding: 2rem;
+  border-top: 0.0625rem solid var(--border-light);
+}
+
+/* Control row — matches .controlRow (flex, center, gap 1rem) */
+.controlRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .playbackBtn {
@@ -100,16 +211,69 @@
   background: var(--border-light);
 }
 
+/* Time display — matches time-display .root (inline-flex, font-mono button size) */
 .timeDisplay {
-  height: 0.75rem;
-  width: 5rem;
+  height: 0.875rem;
+  width: 5.5rem;
   border-radius: 0.25rem;
   background: var(--border-light);
 }
 
-.timeline {
-  flex: 1;
-  height: 0.375rem;
+/* Timeline — matches timeline .root (col, gap 0.5rem, full width) */
+.timelineGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* Track — matches .slider (height 0.75rem) > .track (height var) */
+.timelineTrack {
+  width: 100%;
+  height: 0.125rem;
   border-radius: 999px;
   background: var(--border-light);
+}
+
+/* Laps — matches .laps (flex, space-between) */
+.timelineLaps {
+  display: flex;
+  justify-content: space-between;
+}
+
+.timelineLap {
+  height: 0.625rem;
+  width: 2rem;
+  border-radius: 0.125rem;
+  background: var(--border-light);
+}
+
+/* ------------------------------------------------------------------ */
+/* Error states — fill the same container space as loaded content     */
+/* ------------------------------------------------------------------ */
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  gap: 0.5rem;
+  padding: 2rem;
+}
+
+.errorTitle {
+  font-family: var(--font-primary);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}
+
+.errorDetail {
+  font-family: var(--font-primary);
+  font-size: var(--text-button);
+  color: var(--text-tertiary);
+  text-align: center;
+  max-width: 20rem;
 }
