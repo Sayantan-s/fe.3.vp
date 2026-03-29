@@ -1,0 +1,61 @@
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.item {
+  position: relative;
+  width: 3rem;
+  aspect-ratio: 1/1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  background: none;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.15s ease;
+}
+
+.item:focus-visible {
+  outline-color: var(--play-btn, #5b6cfc);
+}
+
+.item[data-state="checked"] {
+  outline-color: var(--play-btn, #5b6cfc);
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+}
+
+.checkOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.item[data-state="checked"] .checkOverlay {
+  opacity: 1;
+}
+
+.checkCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+}

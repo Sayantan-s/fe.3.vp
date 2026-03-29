@@ -6,6 +6,7 @@ import { PlaybackTimeBridge } from "@/components/feat/right-panel/playback-time-
 import { RightPanelSkeleton } from "@/components/feat/skeletons/right-panel-skeleton";
 import styles from "@/components/feat/right-panel/right-panel.module.css";
 import Player from "@/components/stories/organisms/player";
+import { BG_OPTIONS } from "@/components/stories/molecules/background-swatch/bg-options";
 
 export default function RightPanelPage() {
   const { videoUrl, bg, padding, rounding, isLoading, error } =
@@ -34,7 +35,7 @@ export default function RightPanelPage() {
           rounding={rounding}
           onError={(e: unknown) => console.error("Player error:", e)}
         >
-          <Player.Canvas.Background backgroundSrc={bg ?? "/sample-bg.jpg"} />
+          <Player.Canvas.Background backgroundSrc={bg != null && BG_OPTIONS[bg] ? BG_OPTIONS[bg].src : "/sample-bg.jpg"} />
           <Player.Canvas.Video videoSrc={videoUrl ?? ""} />
           <PlaybackTimeBridge />
           <PlaybackBar />

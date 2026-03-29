@@ -2,16 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { Copy } from "lucide-react";
+import { Copy, SkipForward, Undo2 } from "lucide-react";
 import { useTranscriptState } from "@/components/feat/context/transcript/use-transcript-state";
+import { useTranscriptActions } from "@/components/feat/context/transcript/use-transcript-actions";
 import { usePlaybackTimeStore } from "@/components/feat/context/playback-time/use-playback-time";
 import { useCurrentWordIndex } from "./use-current-word-index";
 import { useTranscriptSelection } from "./use-transcript-selection";
+import { findWordAtTime } from "./find-word-at-time";
 import leftPanelStyles from "../left-panel.module.css";
 import styles from "./transcript-panel.module.css";
 
 export function TranscriptPanel() {
-  const { words, isLoading, error } = useTranscriptState();
+  const { words, isLoading, error, skippedIndices } = useTranscriptState();
+  const { skipRange, unskipRange } = useTranscriptActions();
   const currentWordIndex = useCurrentWordIndex();
   const store = usePlaybackTimeStore();
 
@@ -29,6 +32,58 @@ export function TranscriptPanel() {
       });
     }
   }, [currentWordIndex, isUserScrolling]);
+
+  // Auto-seek past skipped regions.
+  // Uses lookahead to seek BEFORE the skipped word starts playing,
+  // compensating for ~250ms timeupdate interval + React render delay.
+  useEffect(() => {
+    if (!words || skippedIndices.size === 0) return;
+
+    const LOOKAHEAD_BUFFER = 0.25; // seconds
+
+    function seekPastSkipped(fromIdx: number) {
+      let target = fromIdx;
+      while (target < words!.length && skippedIndices.has(target)) {
+        target++;
+      }
+      if (target < words!.length) {
+        store.seek(words![target].start);
+      } else {
+        store.seek(words![words!.length - 1].end);
+      }
+    }
+
+    return store.subscribe(() => {
+      const time = store.getTime();
+      const idx = findWordAtTime(words, time);
+      if (idx < 0) return;
+
+      // Case 1: already on a skipped word — seek past immediately
+      if (skippedIndices.has(idx)) {
+        seekPastSkipped(idx);
+        return;
+      }
+
+      // Case 2: in the gap after current word, next word is skipped
+      if (time > words[idx].end) {
+        const next = idx + 1;
+        if (next < words.length && skippedIndices.has(next)) {
+          seekPastSkipped(next);
+          return;
+        }
+      }
+
+      // Case 3: lookahead — approaching a skipped word within buffer
+      const next = idx + 1;
+      if (
+        next < words.length &&
+        skippedIndices.has(next) &&
+        words[next].start - time <= LOOKAHEAD_BUFFER
+      ) {
+        seekPastSkipped(next);
+      }
+    });
+  }, [words, skippedIndices, store]);
 
   const handleUserScroll = useCallback(() => {
     setIsUserScrolling(true);
@@ -56,6 +111,15 @@ export function TranscriptPanel() {
     setPopoverOpen(selection.selectedText.length > 0);
   }, [selection.selectedText]);
 
+  // Check if the entire selection is already skipped
+  const isSelectionAllSkipped = (() => {
+    if (selection.startIndex < 0 || selection.endIndex < 0) return false;
+    for (let i = selection.startIndex; i <= selection.endIndex; i++) {
+      if (!skippedIndices.has(i)) return false;
+    }
+    return true;
+  })();
+
   const handleCopy = useCallback(async () => {
     if (selection.selectedText) {
       await navigator.clipboard.writeText(selection.selectedText);
@@ -63,6 +127,22 @@ export function TranscriptPanel() {
       setPopoverOpen(false);
     }
   }, [selection.selectedText]);
+
+  const handleSkip = useCallback(() => {
+    if (selection.startIndex >= 0 && selection.endIndex >= 0) {
+      skipRange(selection.startIndex, selection.endIndex);
+      document.getSelection()?.removeAllRanges();
+      setPopoverOpen(false);
+    }
+  }, [selection.startIndex, selection.endIndex, skipRange]);
+
+  const handleUnskip = useCallback(() => {
+    if (selection.startIndex >= 0 && selection.endIndex >= 0) {
+      unskipRange(selection.startIndex, selection.endIndex);
+      document.getSelection()?.removeAllRanges();
+      setPopoverOpen(false);
+    }
+  }, [selection.startIndex, selection.endIndex, unskipRange]);
 
   const handleWordClick = useCallback(
     (start: number) => {
@@ -121,19 +201,23 @@ export function TranscriptPanel() {
           onScroll={handleUserScroll}
         >
           {words.map((word, i) => {
-            const isCurrentWord = i === currentWordIndex;
-            const isSpoken = currentWordIndex >= 0 && i <= currentWordIndex;
+            const isSkipped = skippedIndices.has(i);
+            const isCurrentWord = !isSkipped && i === currentWordIndex;
+            const isSpoken = !isSkipped && currentWordIndex >= 0 && i <= currentWordIndex;
             const isWord = word.type === "word";
+            const isClickable = isWord && !isSkipped;
 
             let className = styles.word;
-            if (isCurrentWord) {
+            if (isSkipped) {
+              className += ` ${styles.skipped}`;
+            } else if (isCurrentWord) {
               className += ` ${styles.current}`;
             } else if (isSpoken) {
               className += ` ${styles.spoken}`;
             } else {
               className += ` ${styles.unspoken}`;
             }
-            if (isWord) {
+            if (isClickable) {
               className += ` ${styles.wordClickable}`;
             }
 
@@ -143,7 +227,7 @@ export function TranscriptPanel() {
                 ref={isCurrentWord ? currentWordRef : undefined}
                 data-index={i}
                 className={className}
-                onClick={isWord ? () => handleWordClick(word.start) : undefined}
+                onClick={isClickable ? () => handleWordClick(word.start) : undefined}
               >
                 {word.text}
               </span>
@@ -161,6 +245,17 @@ export function TranscriptPanel() {
               <Copy size={14} />
               Copy
             </button>
+            {isSelectionAllSkipped ? (
+              <button className={styles.popoverAction} onClick={handleUnskip}>
+                <Undo2 size={14} />
+                Unskip
+              </button>
+            ) : (
+              <button className={styles.popoverAction} onClick={handleSkip}>
+                <SkipForward size={14} />
+                Skip
+              </button>
+            )}
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>

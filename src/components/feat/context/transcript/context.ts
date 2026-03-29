@@ -20,20 +20,27 @@ export const TranscriptStateSchema = z.object({
   error: z.string().nullable(),
 });
 
-export type TranscriptState = z.infer<typeof TranscriptStateSchema>;
+export type TranscriptState = z.infer<typeof TranscriptStateSchema> & {
+  skippedIndices: Set<number>;
+};
 
 export const INITIAL_TRANSCRIPT_STATE: TranscriptState = {
   text: null,
   words: null,
   isLoading: true,
   error: null,
+  skippedIndices: new Set(),
 };
 
 export interface TranscriptActions {
-  // future: selectWord, skipToWord, etc.
+  skipRange: (startIndex: number, endIndex: number) => void;
+  unskipRange: (startIndex: number, endIndex: number) => void;
 }
 
-const NOOP_ACTIONS: TranscriptActions = {};
+const NOOP_ACTIONS: TranscriptActions = {
+  skipRange: () => {},
+  unskipRange: () => {},
+};
 
 export const TranscriptStateContext =
   createContext<TranscriptState>(INITIAL_TRANSCRIPT_STATE);

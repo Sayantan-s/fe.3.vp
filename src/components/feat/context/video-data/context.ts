@@ -5,7 +5,7 @@ import { z } from "zod/v4";
 
 export const VideoDataStateSchema = z.object({
   videoUrl: z.string().nullable(),
-  bg: z.string().nullable(),
+  bg: z.number().nullable(),
   padding: z.number(),
   rounding: z.number(),
   isLoading: z.boolean(),
@@ -24,11 +24,13 @@ export const INITIAL_VIDEO_DATA_STATE: VideoDataState = {
 };
 
 export interface VideoDataActions {
+  setBg: (value: number) => void;
   setPadding: (value: number) => void;
   setRounding: (value: number) => void;
 }
 
 const NOOP_ACTIONS: VideoDataActions = {
+  setBg: () => {},
   setPadding: () => {},
   setRounding: () => {},
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   TranscriptActionsContext,
   TranscriptStateContext,
@@ -31,17 +31,36 @@ export function TranscriptProvider({
   isLoading,
   children,
 }: TranscriptProviderProps) {
+  const [skippedIndices, setSkippedIndices] = useState<Set<number>>(new Set());
+
+  const skipRange = useCallback((startIndex: number, endIndex: number) => {
+    setSkippedIndices((prev) => {
+      const next = new Set(prev);
+      for (let i = startIndex; i <= endIndex; i++) next.add(i);
+      return next;
+    });
+  }, []);
+
+  const unskipRange = useCallback((startIndex: number, endIndex: number) => {
+    setSkippedIndices((prev) => {
+      const next = new Set(prev);
+      for (let i = startIndex; i <= endIndex; i++) next.delete(i);
+      return next;
+    });
+  }, []);
+
   const state: TranscriptState = useMemo(
     () => ({
       text: initialData?.transcript?.text ?? null,
       words: initialData?.transcript?.words ?? null,
       isLoading,
       error,
+      skippedIndices,
     }),
-    [initialData, isLoading, error],
+    [initialData, isLoading, error, skippedIndices],
   );
 
-  const actions = useMemo(() => ({}), []);
+  const actions = useMemo(() => ({ skipRange, unskipRange }), [skipRange, unskipRange]);
 
   return (
     <TranscriptActionsContext value={actions}>

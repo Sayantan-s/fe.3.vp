@@ -21,7 +21,7 @@ export function StudioProvider({ videoId, children }: StudioProviderProps) {
         videoData
           ? {
               videoUrl: videoData.videoUrl,
-              bg: "/sample-bg.jpg",
+              bg: videoData.config.bg,
               padding: videoData.config.padding,
               rounding: videoData.config.rounding,
             }

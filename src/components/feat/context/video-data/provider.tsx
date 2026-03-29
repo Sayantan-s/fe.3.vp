@@ -12,7 +12,7 @@ import {
 interface VideoDataProviderProps {
   initialData: {
     videoUrl: string;
-    bg: string;
+    bg: number;
     padding: number;
     rounding: number;
   } | null;
@@ -28,9 +28,11 @@ export function VideoDataProvider({
   children,
 }: VideoDataProviderProps) {
   const [localState, setLocalState] = useState<{
+    bg: number | null;
     padding: number;
     rounding: number;
   }>({
+    bg: INITIAL_VIDEO_DATA_STATE.bg,
     padding: INITIAL_VIDEO_DATA_STATE.padding,
     rounding: INITIAL_VIDEO_DATA_STATE.rounding,
   });
@@ -41,11 +43,16 @@ export function VideoDataProvider({
     if (initialData && !hasSynced.current) {
       hasSynced.current = true;
       setLocalState({
+        bg: initialData.bg,
         padding: initialData.padding,
         rounding: initialData.rounding,
       });
     }
   }, [initialData]);
+
+  const setBg = useCallback((value: number) => {
+    setLocalState((prev) => ({ ...prev, bg: value }));
+  }, []);
 
   const setPadding = useCallback((value: number) => {
     setLocalState((prev) => ({ ...prev, padding: clamp(value, 0, 100) }));
@@ -55,18 +62,18 @@ export function VideoDataProvider({
     setLocalState((prev) => ({ ...prev, rounding: clamp(value, 0, 100) }));
   }, []);
 
-  const actions = useMemo(() => ({ setPadding, setRounding }), [setPadding, setRounding]);
+  const actions = useMemo(() => ({ setBg, setPadding, setRounding }), [setBg, setPadding, setRounding]);
 
   const state: VideoDataState = useMemo(
     () => ({
       videoUrl: initialData?.videoUrl ?? null,
-      bg: initialData?.bg ?? null,
+      bg: localState.bg,
       padding: localState.padding,
       rounding: localState.rounding,
       isLoading,
       error,
     }),
-    [initialData, isLoading, error, localState.padding, localState.rounding],
+    [initialData, isLoading, error, localState.bg, localState.padding, localState.rounding],
   );
 
   return (

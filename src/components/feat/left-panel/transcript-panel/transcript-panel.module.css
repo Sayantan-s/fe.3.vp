@@ -40,6 +40,11 @@
   padding: 1px 2px;
 }
 
+.skipped {
+  color: var(--text-disabled);
+  text-decoration: line-through;
+}
+
 /* Selection popover */
 
 .popover {
